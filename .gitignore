@@ -11,3 +11,6 @@ obj/
 # Kit test droppings
 test-install-*
 test-slice-persistence-*
+
+# AI session work artifacts — local-only per the verify-no-work-records workflow
+.ai-work/
