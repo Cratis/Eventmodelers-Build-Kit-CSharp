@@ -6,6 +6,7 @@
   "bin": "src/cli.js",
   "scripts": {
     "prepublishOnly": "chmod +x src/cli.js",
+    "build": "echo 'Build complete'",
     "test": "yarn node --test tests/*.test.js",
     "test:coverage": "yarn node --test --experimental-test-coverage tests/*.test.js",
     "lint": "yarn eslint .",

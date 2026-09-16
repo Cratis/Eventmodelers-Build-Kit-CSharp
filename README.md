@@ -219,6 +219,32 @@ The kit provides these Claude skills:
 
 See [Skills](Documentation/reference/skills.md) for the full documentation.
 
+## Testing
+
+The kit includes a test project that mirrors your slice structure:
+
+```
+Tests/
+└── SomeModule/
+    └── SomeFeature/
+        └── RegistrationTests.cs  ← tests for Registration slice
+```
+
+```bash
+dotnet test                   # run all tests
+dotnet test --filter "FullyQualifiedName~Registration"  # run specific slice tests
+```
+
+**Test conventions:**
+- Tests live in `Tests/<Module>/<Feature>/<SliceName>Tests.cs`
+- Use `SpecificationFor<T>` base class from `Cratis.Testing`
+- Tests are marked with `[Fact]` attribute (xUnit)
+- Follow the Arrange-Act-Assert pattern
+- Use `Cratis.Chronicle.Testing` for event sourcing tests
+- Maintain the same structure as your implementation slices
+
+See [CLAUDE.md](templates/root/CLAUDE.md#testing) for the full testing documentation.
+
 ## Troubleshooting
 
 ### Kit Can't Find Config

@@ -56,6 +56,32 @@ dotnet run                  # backend (http://localhost:5000, Swagger at /swagge
 always go Backend → `dotnet build` → Specs → Frontend → Composition page → Routes (`App.tsx`). Backend
 and frontend of the same slice never run in parallel. Build must be zero-warning, zero-error.
 
+## Testing
+
+Write tests in the `Tests/` folder that mirror your slice structure:
+
+```
+Tests/
+└── SomeModule/
+    └── SomeFeature/
+        └── RegistrationTests.cs  ← tests for Registration slice
+```
+
+```bash
+dotnet test                   # run all tests
+dotnet test --filter "FullyQualifiedName~Registration"  # run specific slice tests
+```
+
+**Test conventions:**
+- Tests live in `Tests/<Module>/<Feature>/<SliceName>Tests.cs`
+- Use `SpecificationFor<T>` base class from `Cratis.Testing`
+- Tests are marked with `[Fact]` attribute (xUnit)
+- Follow the Arrange-Act-Assert pattern
+- Use `Cratis.Chronicle.Testing` for event sourcing tests
+- Maintain the same structure as your implementation slices
+
+Full detail: `.build-kit-cratis-csharp/.claude/skills/_shared/cratis-conventions.md`.
+
 ## Learn more
 
 - Cratis docs: https://www.cratis.io/docs/
