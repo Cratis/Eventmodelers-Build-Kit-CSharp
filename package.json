@@ -6,10 +6,10 @@
   "bin": "src/cli.js",
   "scripts": {
     "prepublishOnly": "chmod +x src/cli.js",
-    "test": "node --test tests/*.test.js",
-    "test:coverage": "node --test --experimental-test-coverage tests/*.test.js",
-    "lint": "eslint .",
-    "lint:ci": "eslint . --quiet"
+    "test": "yarn node --test tests/*.test.js",
+    "test:coverage": "yarn node --test --experimental-test-coverage tests/*.test.js",
+    "lint": "yarn eslint .",
+    "lint:ci": "yarn eslint . --quiet"
   },
   "files": [
     "src",

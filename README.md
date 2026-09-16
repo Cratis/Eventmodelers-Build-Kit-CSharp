@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/Cratis/Eventmodelers-Build-Kit-CSharp)](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Discord](https://img.shields.io/discord/1234567890123456789?label=Discord)](https://discord.gg/cratis)
+[![Discord](https://img.shields.io/discord/1234567890123456789?label=Discord)](https://discord.gg/kt4AMpV8WV)
 [![CI](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/actions/workflows/pull-requests.yml/badge.svg)](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/actions/workflows/pull-requests.yml)
 
 Real-time Claude agent that connects to the Eventmodelers Platform and implements board slices as Cratis (Arc + Chronicle) vertical slices in a .NET / C# project.
