@@ -1,0 +1,44 @@
+name: Publish
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        default: '0.0.0'
+        type: string
+      release-notes:
+        description: 'Release notes'
+        required: true
+        default: 'No release notes'
+        type: string
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'templates/**'
+      - 'scripts/**'
+      - 'package.json'
+      - '.cratis/ai.json'
+      - '.github/workflows/publish.yml'
+  schedule:
+    - cron: '0 5 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  kit:
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    uses: Cratis/Eventmodelers-Build-Kit/.github/workflows/kit-release.yml@main
+    secrets:
+      commit-token: ${{ secrets.KIT_RELEASE_TOKEN }}
+    with:
+      version: ${{ github.event.inputs.version }}
+      release-notes: ${{ github.event.inputs.release-notes }}
