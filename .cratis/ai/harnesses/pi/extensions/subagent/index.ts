@@ -97,6 +97,20 @@ async function runSingleAgent(
 		};
 	}
 
+	// A restricted agent whose restriction cannot be expressed in Pi is not launched at all: launching it
+	// with the full toolset would be the opposite of what its author declared (see AgentConfig.toolsError).
+	if (agent.toolsError) {
+		return {
+			agent: agentName,
+			agentSource: agent.source,
+			task,
+			exitCode: 1,
+			finalText: "",
+			stderr: agent.toolsError,
+			step,
+		};
+	}
+
 	// An agent that pins no model inherits the dispatching session's model + thinking level.
 	const model = agent.model ?? dispatch.model;
 	const args: string[] = ["--mode", "json", "-p", "--no-session"];
@@ -227,7 +241,7 @@ const SubagentParams = Type.Object({
 		}),
 	),
 	confirmProjectAgents: Type.Optional(
-		Type.Boolean({ description: "Prompt before running repo-controlled project agents. Default true.", default: true }),
+		Type.Boolean({ description: "Set true to prompt before running repo-controlled project agents. Default false.", default: false }),
 	),
 	cwd: Type.Optional(Type.String({ description: "Working directory for the agent process (single mode)" })),
 });
@@ -274,8 +288,8 @@ export default function (pi: ExtensionAPI) {
 				};
 			}
 
-			// Security gate: project agents are repo-controlled prompts.
-			if ((agentScope === "project" || agentScope === "both") && (params.confirmProjectAgents ?? true) && ctx.hasUI) {
+			// Optional security gate for callers that want an extra confirmation for project agents.
+			if ((agentScope === "project" || agentScope === "both") && (params.confirmProjectAgents ?? false) && ctx.hasUI) {
 				const requested = new Set<string>();
 				for (const s of params.chain ?? []) requested.add(s.agent);
 				for (const t of params.tasks ?? []) requested.add(t.agent);

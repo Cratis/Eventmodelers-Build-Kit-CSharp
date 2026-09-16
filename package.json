@@ -3,11 +3,13 @@
   "version": "0.0.1",
   "description": "Real-time Claude agent that connects to the Eventmodelers Platform and implements board slices as Cratis (Arc + Chronicle) vertical slices in a .NET / C# project",
   "type": "module",
-  "bin": {
-    "eventmodelers-build-kit-csharp": "src/cli.js"
-  },
+  "bin": "src/cli.js",
   "scripts": {
-    "prepublishOnly": "chmod +x src/cli.js"
+    "prepublishOnly": "chmod +x src/cli.js",
+    "test": "node --test tests/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage tests/*.test.js",
+    "lint": "eslint .",
+    "lint:ci": "eslint . --quiet"
   },
   "files": [
     "src",
@@ -34,5 +36,11 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "eslint-plugin-import": "^2.32.0",
+    "typescript": "^7.0.2"
   }
 }

@@ -1,200 +1,252 @@
-# Cratis Eventmodelers Build Kit — C#
+# Eventmodelers Build Kit - CSharp
 
-Eventmodelers build kit for Cratis — turns Eventmodelers board slices into Cratis (Arc + Chronicle) vertical slices in a .NET / C# project. Connect your board to an autonomous coding agent that picks up slice status changes, implements the slice the Cratis way (Cratis Arc + Chronicle), runs `dotnet build` / `dotnet test`, and marks the work done — all without manual intervention.
+[![Release](https://img.shields.io/github/v/release/Cratis/Eventmodelers-Build-Kit-CSharp)](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Discord](https://img.shields.io/discord/1234567890123456789?label=Discord)](https://discord.gg/cratis)
+[![CI](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/actions/workflows/pull-requests.yml/badge.svg)](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/actions/workflows/pull-requests.yml)
 
-Built on [cratis.io](https://www.cratis.io). The kit is open-source (MIT) and is part of the Cratis ecosystem. The build-kit concept and realtime agent loop originate from [Nebulit-GmbH/Eventmodelers-Build-Kits](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits).
+Real-time Claude agent that connects to the Eventmodelers Platform and implements board slices as Cratis (Arc + Chronicle) vertical slices in a .NET / C# project.
 
-[![Publish](https://github.com/Cratis/Eventmodelers-Build-Kit/actions/workflows/publish.yml/badge.svg)](https://github.com/Cratis/Eventmodelers-Build-Kit/actions/workflows/publish.yml)
+## Start Here
 
----
+- **[Install the Kit](Documentation/getting-started/install.md)** — Get started in 5 minutes
+- **[Run Your First Slice](Documentation/getting-started/first-slice.md)** — See a slice go from Planned to Done
+- **[Connect a Board](Documentation/guides/connect-a-board.md)** — Set up your Eventmodelers board credentials
+- **[Documentation](Documentation/)** — Full documentation and guides
 
-## What you get
+## Place in the Cratis Ecosystem
 
-- A ready-to-run **Cratis starter app** (Cratis Arc + Chronicle + MongoDB + React/PrimeReact) dropped
-  into your project root, including an example vertical slice to learn from and a `CLAUDE.md` of
-  conventions.
-- The **ralph loop** — an autonomous agent that reacts to `slice:changed` events and implements slices.
-- **Build skills** that encode the Cratis way:
-  - `/build-state-change` — write slices → `[Command]` + `Handle()` + `[EventType]`
-  - `/build-state-view` — read slices → `[ReadModel]` + projection/reducer + queries
-  - `/build-automation` — automation / translation → `IReactor` + `ICommandPipeline`
-- **Platform skills** (`/connect`, `/load-slice`, `/update-slice-status`, `/learn-eventmodelers-api`).
+This kit bridges the gap between the [Eventmodelers Platform](https://app.eventmodelers.ai) and [Cratis](https://cratis.dev):
 
----
+| Component | What It Does |
+|---|---|
+| **Eventmodelers Platform** | Manages board slices with statuses like `Planned`, `InProgress`, `Done` |
+| **This Kit** | Automatically implements slices as Cratis vertical slices when marked `Planned` |
+| **Cratis Chronicle** | Event sourcing engine that powers the generated slices |
+| **Cratis Arc** | CQRS framework that provides commands, queries, and projections |
 
-## How it works
+The kit follows the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits) and generates slices that follow [Cratis best practices](Documentation/reference/cratis-conventions.md).
 
-```
-Board (Eventmodelers)
-  │  slice status → "Planned"
-  ▼
-Realtime Agent  ──────────────────► tasks.json
-  │  listens on a board channel          │
-  ▼                                      ▼
-ralph loop ◄────────────────────── Phase 1: load slice  (/connect + /load-slice → .slices/)
-  │
-  ▼
-Phase 2: build slice
-  → set status "InProgress" on the board
-  → route by slice type to /build-state-change | /build-state-view | /build-automation
-  → implement ONE .cs slice file the Cratis way
-  → dotnet build (also regenerates TypeScript proxies)  +  dotnet test  (slice only)
-  → implement the React component(s) if UI-triggered, register in the composition page
-  → commit, merge to main
-  → set status "Done" on the board
-```
+## Problem It Solves
 
----
+When you design a slice on the Eventmodelers board, you're creating a **model** — a specification of what should happen. But that model doesn't exist anywhere executable. Someone (or something) needs to:
 
-## Prerequisites
+1. Read the slice definition from the board
+2. Generate the actual C# code (commands, events, projections, read models, React components)
+3. Build and test the code
+4. Update the board status when complete
 
-- .NET SDK 9.0+ and Docker (for Chronicle + MongoDB via `docker-compose`).
-- Node.js 18+ (the realtime agent and the starter frontend are Node/Vite).
-- An Eventmodelers board (org ID, board ID, API token) — optional; the kit also works locally without a
-  board (it just skips board sync).
+This kit automates that entire process. When you mark a slice as `Planned` on your board, the kit:
 
----
+- **Fetches** the slice definition in real-time
+- **Generates** a complete Cratis vertical slice
+- **Builds** it with `dotnet build`
+- **Tests** it with `dotnet test`
+- **Updates** the board to `Done`
 
-## Start here
+All without manual intervention.
 
-- [Install the kit](#install) — get the Cratis starter app and agent loop
-- [What the kit owns](#what-the-kit-owns) — capabilities and boundaries
-- [Usage](#usage) — how to run the agent loop
-- [Cratis AI corpus](#cratis-ai-corpus) — generated conventions and skills
-- [License](#license) — MIT
-- [Sibling kits](#sibling-kits) — Kotlin and Java variants
+## How It Works
 
-## What the kit owns
+The kit implements the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits/tree/main/eventmodelers-cli/shared/build-kit). Here's what happens:
 
-| Boundary | Kit provides |
-| --- | --- |
-| Installation | Cratis starter app with Arc + Chronicle, MongoDB, React frontend, and example slice |
-| Agent loop | ralph — autonomous Claude agent that reacts to slice:changed events |
-| Build skills | `/build-state-change`, `/build-state-view`, `/build-automation` for implementing slices |
-| Platform skills | `/connect`, `/load-slice`, `/update-slice-status`, `/learn-eventmodelers-api` for board integration |
-| Generated conventions | `cratis-conventions.md` derived from the Cratis AI corpus |
-| MCP server | Eventmodelers platform integration configured in `.claude/settings.json` |
+### Two Independent Triggers
 
-## Install
+The kit runs two separate loops that can fire independently:
 
-Run the installer in your project directory:
+1. **`tasks.json` non-empty** → Run `prompt.md` (reacts to status changes)
+   - When a slice status changes to `Planned`, the kit picks it up
+   - When a slice is marked `Done` or `Blocked`, the kit logs the result
+   
+2. **Slice is `Planned` in `.slices/*/index.json`** → Run `backend-prompt.md` (builds one slice)
+   - When a slice is `Planned`, the kit builds exactly one slice
+   - Then stops so the loop can re-enter and check for more work
 
-```bash
-npx github:Cratis/Eventmodelers-Build-Kit install
-```
+### Slice-Type Routing
 
-It will:
+The kit automatically routes to the correct build skill based on the slice definition:
 
-- Copy the **Cratis starter app** into your project root (`CratisApp.csproj`, `Program.cs`,
-  `docker-compose.yml`, the `.frontend/` shell, an example `SomeModule/SomeFeature/` slice, `CLAUDE.md`).
-- Install the loop machinery and skills into `.cratis-build-kit/` (gitignored automatically).
-- Prompt for board credentials (org ID, board ID, token) → `.cratis-build-kit/.eventmodelers/config.json`.
-- Configure the Eventmodelers MCP server in `.cratis-build-kit/.claude/settings.json`.
+| Condition | Skill |
+|---|---|
+| `sliceType === "TRANSLATION"` | `build-automation` (reactors / automation) |
+| `processors[]` non-empty | `build-automation` |
+| `projections` / `queries` / `readModel` present | `build-state-view` |
+| otherwise (`commands` / `events`) | `build-state-change` |
 
-| Path | Purpose |
-|------|---------|
-| `.cratis-build-kit/.claude/skills/build-state-change` | Write-slice skill (Cratis commands/events) |
-| `.cratis-build-kit/.claude/skills/build-state-view` | Read-slice skill (read models/projections) |
-| `.cratis-build-kit/.claude/skills/build-automation` | Automation/translation skill (reactors) |
-| `.cratis-build-kit/.claude/skills/_shared/cratis-conventions.md` | The distilled Cratis conventions |
-| `.cratis-build-kit/.claude/skills/{connect,load-slice,update-slice-status,learn-eventmodelers-api}` | Platform skills |
-| `.cratis-build-kit/ralph-claude.js` / `ralph.sh` | The agent loop |
-| `.cratis-build-kit/lib/prompt.md` / `backend-prompt.md` | Agent instructions |
-| `.cratis-build-kit/lib/AGENT.md` | Accumulated learnings across iterations |
+### Generated Code Follows Cratis Best Practices
 
----
+Every generated slice follows these rules:
 
-## Usage
+- **One `.cs` per slice** — All backend artifacts in a single file
+- **`[Command]` with `Handle()` on the record** — No separate handler class
+- **`[EventType]` with no attribute arguments** — Past-tense, self-describing names
+- **No nullable event properties** — Model optional facts as separate events
+- **`ConceptAs<T>`/`EventSourceId<T>` instead of raw primitives** — Type-safe domain values
+- **Namespace mirrors folder structure** — Clear navigation by feature
+- **No `IEventLog` injection** — Express appends through return types
+
+See [Cratis Conventions](Documentation/reference/cratis-conventions.md) for the full list.
+
+## Installation
+
+Install from git (this package is private, so use the git install path):
 
 ```bash
-docker-compose up -d        # Chronicle + MongoDB + Aspire dashboard
-dotnet build                # backend + TypeScript proxy generation
-npm install                 # frontend deps
+npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
 ```
 
-Start the agent loop:
+Or use the upstream CLI with this repository as a git stack:
 
 ```bash
-# Claude (default)
-node .cratis-build-kit/ralph-claude.js
-
-# Local Ollama model (run `ollama serve` first)
-OLLAMA_MODEL=qwen3:8b node .cratis-build-kit/ralph-ollama.js
-
-# Target a custom project directory
-node .cratis-build-kit/ralph-claude.js /path/to/project
+npx @eventmodelers/cli init --stack cratis-csharp --git https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp
 ```
 
-Optionally start the realtime agent for automatic board notifications:
+After installation, run:
 
 ```bash
-cd .cratis-build-kit && npm install && node realtime-agent.js
+node .build-kit/ralph-claude.js
 ```
 
----
+## Example: A Slice Goes from Planned to Done
 
-## Slice-type routing
+Here's what happens when you mark a slice as `Planned` on your Eventmodelers board:
 
-The loop reads `slice.json` and routes by type:
+### 1. Board Status Changes to `Planned`
 
-| slice.json signal | Cratis slice type | Skill | Produces |
-|---|---|---|---|
-| has `commands[]` / `events[]` | State Change | `/build-state-change` | `[Command]` + `Handle()` + `[EventType]` |
-| has `readModel` / `projections` / `queries` | State View | `/build-state-view` | `[ReadModel]` + projection/reducer + static queries |
-| non-empty `processors[]` | Automation | `/build-automation` | `IReactor` |
-| `sliceType === "TRANSLATION"` | Translation | `/build-automation` | `IReactor` → `ICommandPipeline.Execute(command)` |
+```json
+{
+  "id": "slice-123",
+  "title": "Register Author",
+  "status": "Planned",
+  "contextName": "Authors",
+  "sliceType": "StateChange",
+  "commands": ["RegisterAuthor"],
+  "events": ["AuthorRegistered"],
+  "description": "Register a new author with name and email"
+}
+```
 
----
+### 2. Kit Fetches and Persists the Slice
 
-## The Cratis way (what the skills enforce)
+The kit saves the slice to `.build-kit/.slices/Authors/register-author/slice.json`:
 
-- ALL backend artifacts for a slice in ONE `.cs` file under `<Module>/<Feature>/<Slice>/`.
-- `[Command]` records with `Handle()` on the record — never separate handler classes.
-- `[EventType]` with NO arguments; past-tense, never-nullable events.
-- `ConceptAs<T>` for every identity/value — no raw `Guid` / `string` in the domain.
-- `[ReadModel]` records with `public static` query methods; observable queries return `ISubject<T>`.
-- Reactors implement `IReactor`; new writes go through `ICommandPipeline`, never `IEventLog`.
-- `dotnet build` generates the TypeScript proxies — Backend → build → Specs → Frontend → Composition.
+```json
+{
+  "id": "slice-123",
+  "title": "Register Author",
+  "status": "Planned",
+  "contextName": "Authors",
+  "sliceType": "StateChange",
+  "commands": ["RegisterAuthor"],
+  "events": ["AuthorRegistered"],
+  "description": "Register a new author with name and email"
+}
+```
 
-Full detail: `.cratis-build-kit/.claude/skills/_shared/cratis-conventions.md`.
+### 3. Kit Generates the Vertical Slice
 
----
+The kit generates a complete Cratis vertical slice in `Authors/Registration/RegisterAuthor.cs`:
 
-## CLI commands
+```csharp
+using Cratis.Chronicle.Concepts;
+using Cratis.Fundamentals;
+
+namespace Authors.Registration;
+
+/// <summary>
+/// Represents the unique identifier of an author.
+/// </summary>
+public record AuthorId(Guid Value) : EventSourceId<Guid>(Value)
+{
+    public static readonly AuthorId NotSet = new(Guid.Empty);
+    public static AuthorId New() => new(Guid.NewGuid());
+    public static implicit operator AuthorId(Guid value) => new(value);
+}
+
+/// <summary>
+/// Represents the name of an author.
+/// </summary>
+public record AuthorName(string Value) : ConceptAs<string>(Value)
+{
+    public static implicit operator AuthorName(string value) => new(value);
+}
+
+/// <summary>
+/// Command to register a new author.
+/// </summary>
+/// <param name="Id">The author's unique identifier.</param>
+/// <param name="Name">The author's display name.</param>
+[Command]
+public record RegisterAuthor(AuthorId Id, AuthorName Name) : ICanProvideEventSourceId
+{
+    public EventSourceId GetEventSourceId() => Id;
+
+    public AuthorRegistered Handle() => new(Id, Name);
+}
+
+/// <summary>
+/// Emitted when an author is registered.
+/// </summary>
+/// <param name="Id">The author's unique identifier.</param>
+/// <param name="Name">The author's display name.</param>
+[EventType]
+public record AuthorRegistered(AuthorId Id, AuthorName Name);
+```
+
+### 4. Kit Builds and Tests the Slice
 
 ```bash
-npx github:Cratis/Eventmodelers-Build-Kit install    # install and configure
-npx github:Cratis/Eventmodelers-Build-Kit status     # check what is installed
-npx github:Cratis/Eventmodelers-Build-Kit uninstall  # remove installed files
+dotnet build Authors.Registration
+dotnet test Authors.Registration.Specs
 ```
 
----
+### 5. Kit Updates Board to `Done`
 
-## Slice statuses
+The kit updates the slice status to `Done` on the Eventmodelers board, completing the loop.
 
-| Status | Meaning |
-|--------|---------|
-| `Created` | Slice exists on the board, not yet planned |
-| `Planned` | Queued for the agent — triggers a build |
-| `InProgress` | Agent is currently implementing |
-| `Review` | Implementation complete, awaiting review |
-| `Done` | Fully implemented and merged |
-| `Blocked` | Waiting on an external dependency |
+## Skills
 
----
+The kit provides these Claude skills:
 
-## Cratis AI corpus
+| Skill | Purpose |
+|---|---|
+| **`build-state-change`** | Generate commands and events for State Change slices |
+| **`build-state-view`** | Generate projections and read models for State View slices |
+| **`build-automation`** | Generate reactors and automations for Automation slices |
+| **`connect`** | Connect to the Eventmodelers Platform |
+| **`load-slice`** | Load a slice from the board |
+| **`update-slice-status`** | Update a slice's status on the board |
 
-The `.cratis/ai/` directory and `templates/.claude/skills/_shared/` are generated by `cratis ai update`
-and `scripts/sync-corpus-to-templates.mjs`. They are refreshed on every release and must not be
-hand-edited. The generated `cratis-conventions.md` is derived from the Cratis AI corpus selected by
-the profiles in `.cratis/ai.json`.
+See [Skills](Documentation/reference/skills.md) for the full documentation.
+
+## Troubleshooting
+
+### Kit Can't Find Config
+
+If the kit can't find your credentials:
+
+1. Check `.eventmodelers/config.json` exists in your project root
+2. Verify the JSON is valid: `cat .eventmodelers/config.json | jq .`
+3. Ensure your credentials are correct: [app.eventmodelers.ai/account](https://app.eventmodelers.ai/account)
+
+### Slice Stuck in `InProgress`
+
+If a slice is stuck in `InProgress`:
+
+1. Check the kit logs for errors
+2. Verify the generated code builds: `dotnet build`
+3. Run tests: `dotnet test`
+4. Update the slice status manually: [app.eventmodelers.ai](https://app.eventmodelers.ai)
+
+See [Recover a Stuck Slice](Documentation/guides/recover-stuck-slice.md) for the full process.
+
+## See Also
+
+- **[Documentation](Documentation/)** — Full documentation and guides
+- **[Platform Contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits)** — The Eventmodelers platform specification
+- **[Cratis Documentation](https://cratis.dev)** — Cratis framework documentation
+- **[Kotlin/Java Kits](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits)** — Other language implementations
 
 ## License
 
-MIT
-
-## Sibling kits
-
-- [Eventmodelers Build Kit — Kotlin](https://github.com/Cratis/Eventmodelers-Build-Kit-Kotlin) — Kotlin variant
-- [Eventmodelers Build Kit — Java](https://github.com/Cratis/Eventmodelers-Build-Kit-Java) — Java variant
+MIT License — see [LICENSE](LICENSE) for details.

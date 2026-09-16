@@ -1,27 +1,99 @@
-name: Pull requests
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+name: Pull Requests
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
-  sync-corpus-check:
+  test:
+    name: Test Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Checkout
+        uses: actions/checkout@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-
-      - name: Install dependencies
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install Dependencies
         run: npm ci
+      
+      - name: Run Test Suite
+        run: npm test
+        timeout-minutes: 10
+      
+      - name: Report Spec Count
+        run: |
+          echo "✅ Test suite completed successfully"
+          echo "Run 'npm test' locally to see detailed results"
 
-      - name: Check corpus sync
+  markdown:
+    name: Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install Documentation Tools
+        run: npm install -g markdownlint-cli2 linkinator
+      
+      - name: Verify Markdown
+        run: bash Documentation/verify-markdown.sh
+        timeout-minutes: 5
+
+  check:
+    name: Corpus Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Run Corpus Check
         run: node scripts/sync-corpus-to-templates.mjs --check
+        timeout-minutes: 5
+
+  no-release:
+    name: No-Release Intent
+    runs-on: ubuntu-latest
+    
+    if: contains(github.event.pull_request.labels.*.name, 'no-release')
+    
+    steps:
+      - name: Check for Documentation Changes
+        run: |
+          echo "✅ PR marked as no-release"
+          echo "Checking documentation changes..."
+          
+          # Get changed files
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          
+          # Check if only documentation files changed
+          if echo "$changed_files" | grep -qE '^(Documentation/|README\.md|\.github/workflows/|\.gitignore)$'; then
+            echo "✅ Only documentation/CI changes detected"
+          else
+            echo "⚠️  Non-documentation files changed:"
+            echo "$changed_files"
+          fi

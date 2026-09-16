@@ -1,0 +1,60 @@
+- text: Home
+  href: index.md
+- text: Getting Started
+  items:
+  - text: Install the Kit
+    href: getting-started/install.md
+  - text: Run Your First Slice
+    href: getting-started/first-slice.md
+  - text: Verify the Generated Code
+    href: getting-started/verify-code.md
+- text: Guides
+  items:
+  - text: Connect a Board
+    href: guides/connect-a-board.md
+  - text: Run Without Credentials
+    href: guides/run-without-credentials.md
+  - text: Target Another Project
+    href: guides/target-another-project.md
+  - text: Recover a Stuck Slice
+    href: guides/recover-stuck-slice.md
+  - text: Add a Build Skill
+    href: guides/add-build-skill.md
+  - text: Run Against Ollama
+    href: guides/run-against-ollama.md
+- text: Understand
+  items:
+  - text: The Loop and Triggers
+    href: understand/the-loop.md
+  - text: Slice-Type Routing
+    href: understand/slice-type-routing.md
+  - text: Why Backend Precedes Frontend
+    href: understand/backend-precedes-frontend.md
+  - text: What the Agent Is and Isn't Allowed to Decide
+    href: understand/agent-decisions.md
+- text: Reference
+  items:
+  - text: Installed Layout
+    href: reference/installed-layout.md
+  - text: Config Schema
+    href: reference/config-schema.md
+  - text: .slices/ Tree Contract
+    href: reference/slices-tree.md
+  - text: tasks.json Schema
+    href: reference/tasks-json.md
+  - text: Slice Statuses
+    href: reference/slice-statuses.md
+  - text: CLI Commands
+    href: reference/cli-commands.md
+  - text: Platform API Surface
+    href: reference/platform-api.md
+- text: Decisions
+  items:
+  - text: Kit Directory Name
+    href: decisions/kit-directory-name.md
+  - text: One Persistence Implementation
+    href: decisions/one-persistence.md
+  - text: Generated vs Authored cratis-conventions.md
+    href: decisions/generated-vs-authored.md
+  - text: How Agent Output Is Graded
+    href: decisions/agent-output-grading.md
