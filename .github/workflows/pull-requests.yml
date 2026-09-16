@@ -23,8 +23,47 @@ on:
         description: 'Run corpus check'
         required: false
         default: 'true'
+      csharp:
+        description: 'Run C# build and test'
+        required: false
+        default: 'true'
 
 jobs:
+  csharp:
+    name: C# Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    if: github.event.inputs.csharp == 'true' || github.event_name == 'push'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      - name: Restore Dependencies
+        run: dotnet restore templates/root
+        working-directory: .
+      
+      - name: Build
+        run: dotnet build templates/root --configuration Release
+        working-directory: .
+        timeout-minutes: 10
+      
+      - name: Test
+        run: dotnet test templates/root/Tests --configuration Release --no-build
+        working-directory: .
+        timeout-minutes: 10
+      
+      - name: Report Results
+        run: |
+          echo "✅ C# build and test completed successfully"
+          echo "Run 'dotnet test' locally to see detailed results"
+
   build:
     name: Build and Test
     runs-on: ubuntu-latest
@@ -71,10 +110,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'yarn'
+          cache: 'npm'
       
       - name: Install Documentation Tools
-        run: yarn global add markdownlint-cli2 linkinator
+        run: npm install -g markdownlint-cli2 linkinator
       
       - name: Verify Markdown
         run: bash Documentation/verify-markdown.sh
@@ -94,10 +133,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'yarn'
+          cache: 'npm'
       
       - name: Run Corpus Check
-        run: yarn node scripts/sync-corpus-to-templates.mjs --check
+        run: node scripts/sync-corpus-to-templates.mjs --check
         timeout-minutes: 5
         if: inputs.corpus == 'true' || github.event_name != 'workflow_dispatch'
 
