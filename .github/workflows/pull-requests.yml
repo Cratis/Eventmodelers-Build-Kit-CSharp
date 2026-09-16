@@ -85,12 +85,10 @@ jobs:
       - name: Run Build
         run: yarn build
         timeout-minutes: 10
-        if: always()
       
       - name: Run Test Suite
         run: yarn test
         timeout-minutes: 10
-        if: always()
       
       - name: Report Spec Count
         run: |
