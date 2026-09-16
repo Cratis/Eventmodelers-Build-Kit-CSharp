@@ -7,3 +7,7 @@ node_modules
 # .NET build output (in case the starter is built in place during testing)
 bin/
 obj/
+
+# Kit test droppings
+test-install-*
+test-slice-persistence-*

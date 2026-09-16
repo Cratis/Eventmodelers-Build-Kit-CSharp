@@ -1,22 +1,29 @@
-using Cratis.Chronicle.Projections;
-using Cratis.Chronicle.Testing;
-using Cratis.Testing;
+using CratisApp.SomeModule.SomeFeature.Registration;
+using Xunit;
 
 namespace CratisApp.SomeModule.SomeFeature;
 
-public class RegistrationTests : SpecificationFor<Registration>
+public class RegistrationTests
 {
     [Fact]
-    public void should_be_registered()
+    public void Register_should_append_registered_with_the_name()
     {
-        // Arrange
-        var register = new Register(Guid.NewGuid(), "Test Registration");
+        var name = new SomeName("Test Registration");
 
-        // Act
-        var result = Handle(register);
+        var (eventSourceId, @event) = new Register(name).Handle();
 
-        // Assert
-        result.ShouldNotBeNull();
-        result.ShouldBeOfType<Registration>();
+        Assert.NotEqual(Guid.Empty, eventSourceId.Value);
+        Assert.Equal(name, @event.Name);
+    }
+
+    [Fact]
+    public void Register_should_produce_a_new_event_source_id_each_time()
+    {
+        var name = new SomeName("Test Registration");
+
+        var (first, _) = new Register(name).Handle();
+        var (second, _) = new Register(name).Handle();
+
+        Assert.NotEqual(first, second);
     }
 }

@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CratisApp", "CratisApp.csproj", "{6F1B2C3D-4E5A-6B7C-8D9E-0F1A2B3C4D5E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{77E8599C-E9FD-4677-BD49-D207AF3AD3F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -10,6 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77E8599C-E9FD-4677-BD49-D207AF3AD3F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77E8599C-E9FD-4677-BD49-D207AF3AD3F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77E8599C-E9FD-4677-BD49-D207AF3AD3F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77E8599C-E9FD-4677-BD49-D207AF3AD3F1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6F1B2C3D-4E5A-6B7C-8D9E-0F1A2B3C4D5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6F1B2C3D-4E5A-6B7C-8D9E-0F1A2B3C4D5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F1B2C3D-4E5A-6B7C-8D9E-0F1A2B3C4D5E}.Release|Any CPU.ActiveCfg = Release|Any CPU

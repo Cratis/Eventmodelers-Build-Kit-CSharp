@@ -49,7 +49,7 @@ program
     console.log('eventmodelers-build-kit-csharp\n');
 
     const rootDir = process.cwd();
-    // P1: Use .build-kit as the kit directory name (not .cratis-build-kit or .build-kit-cratis-csharp)
+    // P1: Use .build-kit as the kit directory name (not .cratis-build-kit or .build-kit)
     const targetDir = join(rootDir, '.build-kit');
     mkdirSync(targetDir, { recursive: true });
 

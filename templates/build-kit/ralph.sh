@@ -1,14 +1,14 @@
 #!/bin/bash
 # Ralph agent loop — two independent loops, each triggered by their own condition
 #
-# onTask:        tasks.json has entries  → load slice from board, update .build-kit-cratis-csharp/.slices/
-# onPlannedSlice: .build-kit-cratis-csharp/.slices/ has a "Planned" slice → build it
+# onTask:        tasks.json has entries  → load slice from board, update .build-kit/.slices/
+# onPlannedSlice: .build-kit/.slices/ has a "Planned" slice → build it
 #
 # The loops are NOT causally linked — either can trigger on its own.
 #
 # Usage: ./ralph.sh [iterations] [project_dir]
 #   iterations  — number of loop cycles to run; 0 or omitted means run forever
-#   project_dir — path to the project root; defaults to the parent of .build-kit-cratis-csharp
+#   project_dir — path to the project root; defaults to the parent of .build-kit
 
 set -euo pipefail
 
@@ -38,7 +38,7 @@ has_pending_tasks() {
   [[ "$content" != "[]" && -n "$content" ]]
 }
 
-# Returns 0 if any JSON under .build-kit-cratis-csharp/.slices/ contains a "Planned" status
+# Returns 0 if any JSON under .build-kit/.slices/ contains a "Planned" status
 has_planned_slices() {
   grep -rqi '"status"[[:space:]]*:[[:space:]]*"planned"' "$KIT_DIR/.slices/" --include='index.json' 2>/dev/null
 }

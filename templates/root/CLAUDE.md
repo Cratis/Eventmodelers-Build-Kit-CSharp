@@ -6,7 +6,7 @@ safety** via TypeScript proxy generation on `dotnet build`.
 
 Build slices with the kit's skills — `/build-state-change`, `/build-state-view`, `/build-automation` —
 and follow the conventions distilled in
-`.build-kit-cratis-csharp/.claude/skills/_shared/cratis-conventions.md`. **The shipped example slice
+`.build-kit/.claude/skills/_shared/cratis-conventions.md`. **The shipped example slice
 under `SomeModule/SomeFeature/` is the concrete pattern to copy** — match its structure exactly.
 
 ## Structure (learn from `SomeModule/SomeFeature/`)
@@ -80,9 +80,9 @@ dotnet test --filter "FullyQualifiedName~Registration"  # run specific slice tes
 - Use `Cratis.Chronicle.Testing` for event sourcing tests
 - Maintain the same structure as your implementation slices
 
-Full detail: `.build-kit-cratis-csharp/.claude/skills/_shared/cratis-conventions.md`.
+Full detail: `.build-kit/.claude/skills/_shared/cratis-conventions.md`.
 
 ## Learn more
 
 - Cratis docs: https://www.cratis.io/docs/
-- Conventions: `.build-kit-cratis-csharp/.claude/skills/_shared/cratis-conventions.md`
+- Conventions: `.build-kit/.claude/skills/_shared/cratis-conventions.md`

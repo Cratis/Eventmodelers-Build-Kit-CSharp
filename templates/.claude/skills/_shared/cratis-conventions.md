@@ -6711,6 +6711,650 @@ Render separate `Toolbar` instances for visually distinct bars, or use
   inside the same `ToolbarSlotProvider`.
 - Lint and the TypeScript build pass.
 
+## cratis-documentation-writing
+
+---
+name: cratis-documentation-writing
+description: Write and structure documentation using the Diátaxis framework — decide whether a page is a Tutorial, a How-to guide, Reference, or Explanation, then draft it in that style with complete runnable examples. Use when creating or reworking documentation pages for a Cratis-based project, its product, or its samples. Do not use for code generation, release operations, or inventing API facts the code does not show.
+license: MIT
+---
+<!-- cratis-ai-managed: skills/cratis-documentation-writing/SKILL.md -->
+
+# Documentation writing
+
+Documentation fails when it is written for the writer instead of the reader.
+The [Diátaxis framework](https://diataxis.fr/) fixes that by separating
+documentation into four types, each serving one distinct user need — and by
+refusing to mix them. A page that teaches, instructs, describes, and explains
+at once serves none of those needs well.
+
+This skill is documentation-system-agnostic: it applies to a docs site, a
+`docs/` folder in a repository, a wiki, or README files. Where a page goes and
+how navigation is wired is your project's own convention; this skill governs
+the *classification*, *structure*, and *prose* of what you write.
+
+## Classify before writing
+
+Determine which quadrant the page belongs to before drafting:
+
+| Type | Orientation | Analogy | When to use |
+| --- | --- | --- | --- |
+| **Tutorial** | Learning | A lesson | Guide a newcomer step-by-step to a successful first outcome |
+| **How-to guide** | Problem-solving | A recipe | Show an experienced user how to accomplish a specific task |
+| **Reference** | Information | A dictionary | Describe the technical machinery — APIs, attributes, configuration |
+| **Explanation** | Understanding | A discussion | Clarify *why* something works the way it does, trade-offs, architecture |
+
+Rules per type:
+
+- **Tutorial** — never explain *why*; focus on *do this, then this*. Each step
+  must produce a visible, verifiable result. The reader must succeed even
+  while not yet understanding the concepts.
+- **How-to guide** — assume competence. State the goal, list prerequisites,
+  give the steps, done. No teaching.
+- **Reference** — exhaustive and terse. Tables, signatures, attribute lists.
+  No narrative.
+- **Explanation** — no steps. Discuss concepts, trade-offs, and design
+  decisions. Diagrams are welcome here.
+
+If a request seems to need two types at once, that is two pages linked to each
+other. If the type cannot be determined from the request, ask before writing.
+
+## Workflow
+
+1. **Clarify** — decide the document type, the target audience (newcomer,
+   experienced contributor, framework consumer, operator), the reader's goal,
+   and the scope: what to include *and* what to exclude.
+2. **Propose structure** — present an outline (headings plus a one-line
+   description each) before writing full content.
+3. **Write** — produce the full page in well-formatted Markdown, following the
+   style rules below.
+4. **Verify** — run the completion checklist at the end of this skill.
+
+## Writing style
+
+The voice is **direct, practical, and opinionated** — an experienced colleague
+explaining something to a capable developer, confident but never condescending.
+
+- **Active voice, present tense.** "Chronicle appends the event", not "The
+  event is appended by Chronicle."
+- **Second person.** "You configure…", not "One configures…" or "It is
+  possible to configure…".
+- **Lead with the most important information.** Do not bury the key point
+  after three paragraphs of context.
+- Use headings, lists, and code blocks to organize content; dense paragraphs
+  lose readers.
+- Focus on public APIs and features, never internal implementation.
+- Do not document third-party libraries; link to their own docs instead.
+- **American English only**: `color` not `colour`, `behavior` not `behaviour`,
+  `organize` not `organise`, `initialize` not `initialise`.
+
+## Code examples
+
+Examples are where documentation credibility is won or lost.
+
+- Every example must be **complete, correct, and runnable** — no pseudo-code,
+  no `// ...` elisions. If it cannot be shown complete, show a smaller thing
+  that can.
+- Never copy code verbatim from a repository — APIs change under copied
+  examples. Write purpose-built examples that demonstrate the documented
+  behavior.
+- Prefer the framework's canonical shapes. In a Cratis context that means
+  `record` types for commands, events, and read models; attributes as the
+  framework applies them; and the vertical-slice layout the project already
+  uses.
+- Show the outcome: expected output, the state change, or the query result an
+  example produces, so the reader can verify their attempt.
+
+## Diagrams
+
+Use [Mermaid](https://mermaid-js.github.io/mermaid/#/) for architecture
+(`graph TD` / `graph LR`), sequence flows (`sequenceDiagram`), and state
+transitions (`stateDiagram-v2`). A diagram replaces a paragraph of topology
+prose; it does not decorate one.
+
+## Contextual awareness
+
+- Read the existing documentation around the page you are writing first, and
+  match its tone, style, and terminology. If it is "event source" there, it is
+  "event source" everywhere.
+- Do not copy content from existing pages unless explicitly asked; link
+  instead.
+- Do not fabricate URLs or version numbers — link only to resources you can
+  verify exist.
+
+## Completion checklist
+
+A page is done when:
+
+- The Diátaxis type is chosen deliberately and the page holds to that one
+  type, linking out to the other types instead of drifting into them.
+- The audience and their goal were identified before writing, and the first
+  screen serves that goal.
+- Every code example is complete, runnable, and purpose-built.
+- Terminology is consistent with the surrounding documentation.
+- All internal links resolve; all external links are real.
+- Mermaid blocks are syntactically valid.
+- The file ends with a single trailing newline.
+
+## cratis-engineering-csharp-conventions
+
+---
+name: cratis-engineering-csharp-conventions
+description: Apply the Cratis C# house conventions when writing or reviewing C# in a Cratis repository - formatting, naming, records and primary constructors, nullable handling, XML documentation, custom exceptions, structured logging, dependency injection, and service lifetimes. Use for any "how should this be written" C# style question; defer product API decisions and specification authoring to their focused workflows.
+license: LICENSE
+---
+<!-- cratis-ai-managed: skills/cratis-engineering-csharp-conventions/SKILL.md -->
+
+# Cratis C# engineering conventions
+
+These are the house conventions Cratis maintainers apply across every
+repository. They are **conventions**, not framework contracts: nothing here is
+enforced by an analyzer unless this skill says so. Follow them for consistency;
+do not claim the framework requires them.
+
+## Route near misses
+
+- The question is what a Cratis product API *does*: resolve it against the
+  owning product repository, not against this style guide.
+- The subject is a specification file: the specification conventions own the
+  `Establish`/`Because`/`should_` pattern and the `for_`/`when_` hierarchy.
+- The subject is TypeScript or React: this skill covers C# only.
+- The subject is repository structure or documentation: those are separate
+  workflows.
+
+## Quick reference
+
+- Use current C# language features — records, primary constructors, pattern
+  matching, collection expressions.
+- `var` over an explicit type; the right-hand side already names the type.
+- File-scoped namespace declarations.
+- `using` directives alphabetically sorted, single-line, unused ones removed.
+- No regions. A file that needs them needs refactoring instead.
+- No technical postfixes on type names: no `Impl`, `Service`, `Manager`,
+  `Handler`, `Base`, `Async`.
+- No `Exception` suffix on exception types — `AuthorNotFound`, not
+  `AuthorNotFoundException`.
+- Never throw a built-in exception type. Always define a domain exception.
+- `record` for events, commands, read models, concepts, and DTOs.
+- `is null` and `is not null` — never `== null` or `!= null`.
+- Blank line before the opening `{` of every block.
+- A final `return` sits on its own line.
+- Private fields are `_camelCase`; interfaces take the `I` prefix.
+- American English everywhere — initialize, behavior, color, serialize.
+- Every file starts with the repository license header.
+
+## Formatting
+
+```csharp
+// Copyright (c) Cratis. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+namespace <RootNamespace>.<Feature>;
+
+using <Namespace>.<First>;
+using <Namespace>.<Second>;
+
+// Blank line before the opening brace of every block
+if (<condition>)
+{
+    <statement>;
+}
+
+// Expression-bodied form for simple members
+public string <PropertyName> => $"{<First>} {<Second>}";
+
+// The final return stands alone
+public <ReturnType> <MethodName>()
+{
+    var result = <expression>;
+
+    return result;
+}
+```
+
+## Naming
+
+| Artifact | Convention | Example |
+| --- | --- | --- |
+| Type, method, public member | PascalCase | `RegisterAuthor`, `AuthorId` |
+| Private field | `_camelCase` | `_eventLog` |
+| Local variable | camelCase | `authorId` |
+| Interface | `I` prefix | `IEventLog` |
+| Exception type | No `Exception` suffix | `AuthorNotFound` |
+| Feature folder | Pluralized domain noun | `Authors/` |
+| Concept file | The concept name | `AuthorId.cs` |
+
+Avoid abbreviations unless they are universally known (`Id`, `Xml`, `Json`,
+`Url`). Never add a prefix or postfix that names a technical role —
+`Controller`, `ViewModel`, `Handler`, `Manager`, `Factory`, `Base`. Name after
+the domain, not the pattern.
+
+## Where the detail lives
+
+| Topic | Reference |
+| --- | --- |
+| Records, primary constructors, `var`, collections, nullable, async, pattern matching, XML documentation | [code-style.md](references/code-style.md) |
+| Custom exceptions, structured logging, dependency injection, service lifetimes, implementation discovery | [exceptions-logging-and-di.md](references/exceptions-logging-and-di.md) |
+| CUPID, cohesion over layers, ubiquitous language, immutability | [domain-philosophy.md](references/domain-philosophy.md) |
+
+Read the reference that covers the decision at hand rather than all three.
+
+## The two rules most often got wrong
+
+**Anything taking a scoped dependency is scoped or transient, never a
+singleton.** A singleton may not depend on anything that belongs to a tenant, a
+user, or a request. Capturing a scoped collaborator does not throw — it silently
+binds to the root scope's default namespace forever and returns empty results.
+The fix is almost always to drop `[Singleton]`, not to reach for
+`IServiceScopeFactory`. See
+[exceptions-logging-and-di.md](references/exceptions-logging-and-di.md).
+
+**Use `IInstancesOf<T>`, never `IEnumerable<T>`, to enumerate implementations of
+an abstraction.** `IEnumerable<T>` only works when every implementation is
+hand-registered, which defeats convention-based discovery.
+
+## Verify
+
+- Every file carries the repository license header and a file-scoped namespace.
+- `using` directives are sorted, single-line, and free of unused entries.
+- No regions, no technical postfixes, no `Exception` suffix.
+- Every thrown exception is a domain type deriving from `Exception` with a
+  meaningful message and an XML `<exception>` or `<summary>` doc starting with
+  "The exception that is thrown when".
+- No `catch` block is empty or silently swallowing.
+- Null checks use `is null` / `is not null`, and no defensive check contradicts a
+  non-nullable annotation.
+- Every public type, method, property, and operator carries multiline XML
+  documentation with `<param>` and `<returns>` where applicable.
+- No `[Singleton]` takes a scoped dependency or holds tenant-, user-, or
+  request-bound state, and the host sets `ValidateScopes` and `ValidateOnBuild`
+  in every environment.
+- No `services.Add*<TInterface, TImplementation>()` registers a type that exists
+  to be discovered by convention.
+- Text is American English.
+- The solution builds with zero warnings and zero errors, and the affected
+  specifications pass.
+
+## cratis-engineering-decision-record
+
+---
+name: cratis-engineering-decision-record
+description: Consult, author, accept, and supersede decision records in a Cratis repository's decisions/ folder. Use before an architectural, contract, scope, or cross-cutting change, when a ruling has been made that later work must obey, or when an accepted decision has to be replaced. Defer product documentation, session handovers, and work-item status to their own workflows.
+license: LICENSE
+---
+<!-- cratis-ai-managed: skills/cratis-engineering-decision-record/SKILL.md -->
+
+# Cratis decision records
+
+A decision is a durable choice with a **decider** and a **date**. It is
+documentation, not a work record: it lives in the repository's `decisions/`
+folder and is reviewed like any other documentation. A handover may summarize a
+decision; it never holds the only copy.
+
+This skill owns the *procedure* — how to consult, author, accept, and supersede
+a record. It does not decide what to decide, and it never grants acceptance. Do
+not turn an implementation request, issue plan, or reversible technical choice
+into an approval ceremony merely because this skill is available.
+
+## When you need this
+
+- You are about to make a significant architectural, contract, scope, or
+  cross-cutting change. Consult existing records first: a decision you did not
+  read still binds the change. Consulting does not imply that a new record or
+  human approval is required.
+- A human made a durable ruling — in review, in chat, or in a meeting — that
+  later work has to obey. Record it in the same turn, while the reasoning is
+  still available.
+- An accepted decision no longer holds and has to be replaced, narrowed, or
+  qualified.
+- Your change would contradict an accepted record. Stop: supersession or a human
+  verdict comes first, never a workaround.
+
+## When you do not
+
+- **Session notes, plans, handovers, status boards.** Those are work records.
+  They belong in the repository's ignored local working directory, never in
+  `decisions/`.
+- **Product or API documentation.** A record says what was chosen and why; the
+  documentation says how the thing works. Use the documentation workflow.
+- **A work item's status.** "Blocked on X" is a work item field, not a decision.
+- **A reversible choice inside your own scope that nobody will re-litigate.**
+  Make it and move on; see the significance test in step 3.
+- **An implementation request or an issue's proposed plan.** A request to do the
+  work authorizes ordinary in-scope implementation; it is not automatically a
+  request to create or accept an architectural record. Apply the significance
+  test and ask only about a concrete unresolved choice with meaningfully
+  different consequences.
+- **A decision this repository does not own.** Company-level and portfolio
+  decisions live in the record set that owns them. Cite that id; do not copy the
+  record into a repository that cannot supersede it.
+
+## Steps
+
+1. **List the records in force for the paths you are changing.** Read
+   `decisions/`, keep the records whose `applies-to` matches a path you are
+   about to touch and whose `status` is `accepted`, and order them newest first.
+   Report the count — "0 records matched" and "3 matched, none contradicted" are
+   different verdicts and must read differently.
+2. **Cite what you relied on.** Name the ids on the work item, in the pull
+   request body, and as a `Decision: <id>` commit trailer. A change that
+   silently contradicts an accepted record is a defect even when the code is
+   correct.
+3. **Apply the significance test before proposing a record or asking for
+   acceptance.** Write a record only when at least one of these holds: someone
+   will otherwise re-litigate the choice; it binds paths beyond the one you are
+   changing; reversing it would cost real migration or rework; or it rejects an
+   option a reasonable reader would reach for. If none holds, make the change
+   without a record. Do not ask the user to approve labels or abstractions they
+   have not been given enough context to understand.
+4. **Pass the completeness gate, or open with `status: returned`.** A proposed
+   record states the options considered *including the one not taken and why*,
+   the default that applies if the question is never answered and what that
+   default costs, the timeline the decision has to hold to, and what is in scope
+   and out. A record missing any of the four is returned to its proposer for
+   revision — `returned` is not a rejection.
+5. **Write the verification criterion before acceptance, not after.** State the
+   observable signal that will say the decision was actually carried out, as
+   `Done when` and `Verify by`. A decision whose success cannot be observed
+   cannot reach `stage: verified`.
+6. **Open the record as `status: proposed`, `stage: none`, and regenerate the
+   index.** A record the index does not list is a record the consult step in
+   step 1 will never find.
+7. **Accept only after a human makes the significant choice.** Set `status` to
+   `accepted`, `decided` to the date, and `decider` to a named person — never a
+   role, a team, or a tool. Acceptance is a human verdict: draft it, do not grant
+   it. If the decider is not already explicit, first explain in plain language
+   that the choice will become durable repository documentation and why it
+   passed the significance test; only then ask whose name should be recorded.
+8. **Spawn the build work carrying the criterion verbatim.** The `Done when` and
+   `Verify by` text written in step 5 travels onto the work item unchanged, so
+   the thing that gets built is the thing that was decided.
+9. **Move `stage` only on the evidence the next stage requires.** `none` →
+   `implemented` when the change exists in the tree; `implemented` → `verified`
+   only on a signal observed this time. Accepted is not implemented, and
+   implemented is not verified.
+10. **Supersede rather than rewrite.** Never edit an accepted record's decision
+    text in place — that text is what people relied on. Correct a typo or add
+    context under a dated banner that says what changed and why. Change the
+    *choice* only with a new record.
+11. **Point both ways and sweep the citations.** The new record names the one it
+    replaces in `supersedes`; the replaced record's `status` becomes
+    `superseded` and it gains a `superseded-by` pointer forward, with its
+    original text preserved. Then find every work item, pull request body, and
+    commit trailer citing the old id and point it at the new one. A reader
+    arriving at either record must be able to reach the other.
+
+The exact front-matter fields, the closed value sets, and the index shape are in
+[record-format.md](references/record-format.md).
+
+## What breaks
+
+- **Governance ceremony before user clarity.** Asking someone to choose between
+  unexplained policy labels, approve an issue plan they already asked to
+  implement, or name a decider before explaining the durable decision transfers
+  the agent's interpretation burden to the user.
+- **A role in the `decider` field.** "The architecture team decided" names
+  nobody who can be asked what they meant or who can supersede it. The record
+  reads as authority but resolves to no one.
+- **Decision text edited in place.** The next reader sees text nobody ever
+  agreed to, and the people who relied on the old wording have no way to tell
+  what changed. This is the failure that makes a whole `decisions/` folder
+  untrustworthy, because it is invisible.
+- **A one-way supersession.** The new record says it supersedes the old one, but
+  the old one still reads as accepted. Whoever arrives from a search, a
+  citation, or an old pull request follows a decision that was replaced.
+- **`stage: verified` set on a green build.** Compilation proves it builds, not
+  that the decision was carried out. The stage then lies about the only thing it
+  exists to say.
+- **A ruling that stayed in chat.** It binds the next change and nobody can find
+  it. The symptom is the same argument being had a second time, with a different
+  outcome.
+- **One record settling three questions.** It cannot be superseded for one of
+  them, so it survives past the point where a third of it is wrong.
+- **An `applies-to` that matches nothing.** Step 1 returns zero records and reads
+  as "nothing binds this change" instead of "the glob is wrong". Report the count
+  so an empty result is visible rather than reassuring.
+
+## How it is proven
+
+- **Consult ran and found something specific.** The count from step 1 appears in
+  the report, and the ids it returned appear on the work item, in the pull
+  request body, and in a `Decision:` commit trailer.
+- **Acceptance resolves.** The record carries a `decided` date and a `decider`
+  that names a person you could actually ask.
+- **Supersession is traversable.** Follow `superseded-by` forward and
+  `supersedes` back; both land on the other record. Search the repository for
+  the superseded id and confirm no live citation still points only at it.
+- **The stage matches the evidence.** `implemented` is confirmed by the change
+  being in the tree; `verified` is confirmed by naming the signal — the command,
+  the gate, the observed behavior — that was watched *this time*.
+- **The index resolves.** Every record in `decisions/` appears in the index, and
+  every index entry resolves to a file.
+
+## cratis-engineering-docs-authoring
+
+---
+name: cratis-engineering-docs-authoring
+description: Draft accurate Cratis documentation content after the owning repository, page placement, document type, and authoritative product sources are known. Use for tutorials, how-to guides, explanations, and references; defer placement, existing-page discovery, and visual QA to their companion workflows.
+license: LICENSE
+---
+<!-- cratis-ai-managed: skills/cratis-engineering-docs-authoring/SKILL.md -->
+
+# Cratis documentation authoring
+
+Draft one accurate Cratis documentation page in the voice and structure required
+by its document type. This skill owns **content**. It does not decide which
+repository owns a page, wire site navigation, locate an existing source page, or
+perform visual QA.
+
+## Required inputs
+
+Before drafting, establish:
+
+- the owning repository and destination page;
+- document type: tutorial, how-to, explanation, or reference;
+- target reader and the outcome they need;
+- authoritative product source for every API, command, version, and capability;
+- explicit scope and important exclusions.
+
+Use repository evidence to resolve routine details. Ask only when materially
+different document types, audiences, or product choices remain plausible.
+
+## Route near misses
+
+- New-page placement or navigation is unresolved: defer to
+  `cratis-engineering-docs-add-page`.
+- The request changes an existing page whose source location is unresolved:
+  defer to `cratis-engineering-docs-edit-page`.
+- The request is to render, screenshot, or diagnose visual layout: defer to
+  `cratis-engineering-docs-visual-qa`.
+- A product/API claim lacks first-party source evidence: stop and identify the
+  missing authority instead of drafting the claim.
+- The subject is not Cratis product or engineering documentation: do not apply
+  this skill.
+
+## Write one document type
+
+Do not mix Diátaxis types on one page:
+
+| Type | Reader need | Shape |
+| --- | --- | --- |
+| Tutorial | Learn by completing a guided outcome | Ordered steps with visible results |
+| How-to | Solve one concrete problem | Prerequisites, direct procedure, completion check |
+| Explanation | Understand why and when | Concepts, boundaries, trade-offs, diagram |
+| Reference | Look up exact information | Exhaustive tables, fields, commands, signatures |
+
+For the detailed mechanical format, read
+[site-format.md](references/site-format.md).
+
+## Drafting workflow
+
+1. Open with the reader's concrete friction and the Cratis capability that
+   relieves it.
+2. Organize by the reader's workflow, not by implementation namespaces or an
+   alphabetical API dump.
+3. Use active voice, present tense, second person, and American English.
+4. Explain the invisible behavior after each example: what the framework does
+   and why the boundary matters.
+5. Verify every API and command against first-party source at the applicable
+   revision. Never translate a C# example into another client language by guess.
+6. State maturity, authorization, side effects, unsupported surfaces, and when a
+   simpler approach is better.
+7. Show a visible result in tutorials and procedures. Use Mermaid for a
+   non-trivial explanation.
+8. End with the natural next page or workflow.
+
+## Correctness boundary
+
+Never invent product APIs, customer claims, versions, support commitments,
+marketplace availability, or private implementation details. Do not copy a code
+sample from memory. If the source cannot prove a claim, omit it or mark the gap
+for the owning maintainer.
+
+A successful build proves rendering, not technical correctness. The owning
+repository still runs its documentation, snippet, link, and product gates.
+
+## Output
+
+Return or write the page content only at the already approved destination. Do
+not modify navigation, generated copies, project context, credentials, package
+manifests, or unrelated documentation. Report the authoritative source checked
+and the verification that still remains.
+
+## cratis-engineering-effect-boundaries
+
+---
+name: cratis-engineering-effect-boundaries
+description: Apply the Cratis effect-boundary contract when writing or reviewing code that publishes, persists, generates, propagates, or releases. On those boundaries partial success is failure - no catch-and-continue, no defaulting to success on an unknown outcome. Use when a degraded run could still report success; defer style questions and specification authoring to their own workflows.
+license: LICENSE
+---
+<!-- cratis-ai-managed: skills/cratis-engineering-effect-boundaries/SKILL.md -->
+
+# Effect boundaries fail loudly
+
+An **effect boundary** is the point where work leaves the process and becomes
+something other people observe: a package published, a row written, a file
+generated, content propagated to other repositories, a release cut.
+
+The contract:
+
+> On an effect boundary, **partial success is failure.** No catch-and-continue,
+> no defaulting to success on an unknown outcome. A degraded operation must fail
+> the operation, surface the delta, or emit an explicit degraded-mode signal.
+
+Silent failure is the dominant recurring bug archetype across Cratis. The
+2026-08-24 organization-wide review found one disease with six manifestations,
+in the release action, the Arc proxy generator, Stage, the Chronicle container
+host, Chronicle constraint enforcement, and corpus propagation. They are written
+out in [failure-archetypes.md](references/failure-archetypes.md); read them
+before deciding that your case is different.
+
+## When you need this
+
+- You are writing or reviewing a `catch` around an operation with an effect —
+  publish, write, generate, copy, notify, tag, release.
+- An operation processes a set and some members can fail independently: a
+  fan-out, a batch, a matrix, a per-file generator.
+- A call returns an outcome you did not model: an unexpected status code, a
+  null, an empty result, a timeout.
+- Two implementations of one interface exist and only one of them really
+  enforces the behavior — an in-memory or SQL sibling of a real store.
+- A host, container, or long-running process can reach a "started" state while
+  the thing it started has already thrown.
+
+## When you do not
+
+- **Pure computation with no effect.** A parser that returns a partial tree for
+  a caller that inspects it is not an effect boundary.
+- **A retry that will still report the final outcome truthfully.** Retrying is
+  not swallowing; reporting success after the retries also failed is.
+- **A genuinely optional enrichment whose absence is stated in the result.** An
+  optional cache warm that records `cache: skipped` is a degraded-mode signal,
+  which is exactly what this contract asks for.
+- **Style, naming, or structure questions.** Those belong to the C# and
+  TypeScript conventions.
+- **Deciding whether an operation should exist at all.** That is a product or
+  scope ruling, not an error-handling one.
+
+## Steps
+
+1. **Name the boundary before you write the handler.** Say out loud what leaves
+   the process: which package, which rows, which files, which repositories.
+   If nothing leaves, this contract does not apply and you can stop here.
+2. **Enumerate the outcomes the call can produce, including the ones you did not
+   design for.** An unexpected status code, an empty response, and a timeout are
+   outcomes. A handler that maps everything it did not enumerate onto success is
+   the defect.
+3. **Choose one of the three permitted responses to a degraded outcome, and say
+   which one you chose.** Fail the operation; or complete and surface the delta
+   in the result; or emit an explicit degraded-mode signal the caller must
+   handle. Anything else is catch-and-continue.
+4. **Make partial fan-out visible in the aggregate, not just in the log.** Count
+   attempted, succeeded, and failed, and put all three in the returned result
+   and the summary line. "29 of 36 succeeded" and "36 of 36 succeeded" must not
+   produce the same output.
+5. **Refuse to convert an unknown into a pass.** An outcome the code could not
+   classify is `indeterminate`. Report it as its own state; never roll it up
+   into the success count.
+6. **Check the sibling implementations of the same interface.** When a real
+   store enforces a constraint, its in-memory and SQL siblings must enforce the
+   same one or throw `NotSupported`. A sibling that silently accepts what the
+   real one rejects makes every specification that uses it pass vacuously.
+7. **Make the process state follow the work.** If startup threw, the host is not
+   `Running`. A liveness or readiness state that survives a failed start is a
+   lie the orchestrator will believe.
+8. **Plant the failure and watch it surface.** Force the degraded outcome —
+   inject the status code, delete an input, fail one fan-out member — and
+   confirm the operation fails, the delta appears, or the degraded signal fires.
+   A boundary whose failure path was never executed is not known to have one.
+
+## What breaks
+
+Every item below is a real Cratis defect, not an illustration. Detail and issue
+references are in [failure-archetypes.md](references/failure-archetypes.md).
+
+- **A swallowed conflict reported as a successful release.** The release action
+  caught a 422 from a concurrent publish and reported the release as done. The
+  version was never published, and the only artifact that said so was a caught
+  exception nobody saw.
+- **A generator that degrades silently.** The Arc proxy generator emitted fewer
+  proxies than its inputs implied and exited zero. The failure shows up much
+  later as a missing TypeScript type, far from the generator that dropped it.
+- **A renderer that quietly renders less.** Stage produced degraded output on a
+  path that reported success, so the difference between correct output and
+  partial output was invisible at the boundary that produced it.
+- **A container that stays `Running` after startup threw.** The Chronicle host
+  reported healthy while the thing it hosts had already failed to start, so the
+  orchestrator kept routing to it.
+- **A constraint that only one implementation enforces.** Chronicle unique
+  constraints were not enforced on the SQL and in-memory storage providers.
+  Every specification exercising them passed while proving nothing.
+- **A fan-out that succeeded 29 times out of 36 and said "done".** Corpus
+  propagation aggregated per-target results into a single success, so seven
+  repositories silently did not receive the change.
+
+The shared symptom: **the failure is discovered downstream, by someone who
+cannot see the boundary that caused it.** That is what makes this archetype
+expensive rather than merely annoying.
+
+## How it is proven
+
+- **The failure path was executed.** Name the planted defect and the observed
+  result: the injected status code, the removed input, the failed fan-out
+  member — and what the operation did in response.
+- **Counts appear on success.** The clean run reports how many subjects it
+  attempted and how many succeeded. A bare "OK" cannot be distinguished from a
+  run over an empty set.
+- **Exit codes carry the verdict.** `0` ran clean, `1` found defects, `2` could
+  not run. A wrapper that exits `0` because the wrapper finished has thrown the
+  child's verdict away; check the child's status and, in a pipeline, the status
+  of every stage.
+- **The degraded signal is asserted, not just emitted.** A specification reads
+  the delta or the degraded-mode field and fails when it is absent.
+- **Sibling implementations are covered by the same specification.** The test
+  that proves the constraint runs against every implementation of the interface,
+  not only the one that enforces it.
+
 ## cratis-event-model-diagram
 
 ---

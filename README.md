@@ -271,7 +271,8 @@ See [Recover a Stuck Slice](Documentation/guides/recover-stuck-slice.md) for the
 - **[Documentation](Documentation/)** — Full documentation and guides
 - **[Platform Contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits)** — The Eventmodelers platform specification
 - **[Cratis Documentation](https://cratis.dev)** — Cratis framework documentation
-- **[Kotlin/Java Kits](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits)** — Other language implementations
+- **[Kotlin Kit](https://github.com/Cratis/Eventmodelers-Build-Kit-Kotlin)** — The Kotlin implementation
+- **[Java Kit](https://github.com/Cratis/Eventmodelers-Build-Kit-Java)** — The Java implementation
 
 ## License
 

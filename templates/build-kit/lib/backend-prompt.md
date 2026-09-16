@@ -9,8 +9,8 @@ implementing.
 ## Your Task
 
 0. Do not read the entire codebase. Focus on the task in this description.
-1. Read `.build-kit-cratis-csharp/.slices/current_context.json` to find the active context name, then
-   read `.build-kit-cratis-csharp/.slices/<contextName>/index.json`. Every item with status "Planned"
+1. Read `.build-kit/.slices/current_context.json` to find the active context name, then
+   read `.build-kit/.slices/<contextName>/index.json`. Every item with status "Planned"
    is a task.
 2. Read the progress log at `progress.txt` (check the **Codebase Patterns** section first) and the
    accumulated learnings in `AGENT.md`.
@@ -22,7 +22,7 @@ implementing.
    "Created", or any other status — even if it looks incomplete. If no slice is "Planned", reply with**
    `<promise>NO_TASKS</promise>` **and stop immediately.**
 5. Read the slice definition from
-   `.build-kit-cratis-csharp/.slices/<contextName>/<folder>/slice.json` — it is the source of truth.
+   `.build-kit/.slices/<contextName>/<folder>/slice.json` — it is the source of truth.
    Never work on more than one slice per iteration.
 6. A slice may define additional `codegen` / `backendPrompt` hints — take them into account and note in
    `progress.txt` when used.
@@ -123,7 +123,7 @@ Never chain multiple slices in one iteration.
 
 ## Important
 
-- If `.build-kit-cratis-csharp/.eventmodelers/config.json` is absent, skip all platform communication
+- If `.build-kit/.eventmodelers/config.json` is absent, skip all platform communication
   (MCP calls, `update-slice-status`, board sync) and continue working locally.
 - Work on ONE slice per iteration. Commit frequently. Update `progress.txt` frequently.
 - Read the Codebase Patterns section in `progress.txt` and `AGENT.md` before starting.

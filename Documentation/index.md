@@ -54,7 +54,7 @@ This kit sits between the [Eventmodelers Platform](https://app.eventmodelers.ai)
 - **This Repository**: [Eventmodelers-Build-Kit-CSharp](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp) — The C# implementation
 - **Downstream**: [Cratis Chronicle](https://github.com/Cratis/Chronicle) + [Cratis Arc](https://github.com/Cratis/Arc) — The framework that generates the vertical slices
 
-See the sibling [Kotlin/Java kits](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits) for other language implementations.
+See the sibling kits for other language implementations: [Kotlin](https://github.com/Cratis/Eventmodelers-Build-Kit-Kotlin) and [Java](https://github.com/Cratis/Eventmodelers-Build-Kit-Java).
 
 ## Installation
 

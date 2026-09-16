@@ -31,26 +31,21 @@ describe('Installer Layout Contract (R2)', () => {
   });
 
   test('should install to .build-kit directory (P1)', () => {
-    // This test verifies the kit directory name is .build-kit, not .cratis-build-kit
-    // The actual installation happens in the install function
-    // We verify by checking what the CLI would create
-    const expectedKitDir = '.build-kit';
-    const oldKitDir = '.cratis-build-kit';
-    const wrongKitDir = '.build-kit-cratis-csharp';
-    
+    // The kit directory must be .build-kit — the only name the Eventmodelers platform CLI
+    // recognizes (see Documentation/decisions/kit-directory-name.md).
+    const cliSource = readFileSync(join(__dirname, '..', 'src', 'cli.js'), 'utf-8');
+
     assert.ok(
-      expectedKitDir === '.build-kit',
-      'Kit directory should be .build-kit, not .cratis-build-kit or .build-kit-cratis-csharp'
+      cliSource.includes("join(rootDir, '.build-kit')"),
+      'The installer should target the .build-kit directory'
     );
-    
     assert.ok(
-      expectedKitDir !== oldKitDir,
-      'Should not use old .cratis-build-kit name'
+      !cliSource.includes("join(rootDir, '.cratis-build-kit')"),
+      'The installer should not target the old .cratis-build-kit directory'
     );
-    
     assert.ok(
-      expectedKitDir !== wrongKitDir,
-      'Should not use .build-kit-cratis-csharp name'
+      !cliSource.includes("join(rootDir, '.build-kit-cratis-csharp')"),
+      'The installer should not target the old .build-kit-cratis-csharp directory'
     );
   });
 

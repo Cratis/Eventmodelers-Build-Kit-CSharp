@@ -43,19 +43,19 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
       
       - name: Restore Dependencies
-        run: dotnet restore templates/root
+        run: dotnet restore templates/root/CratisApp.sln
         working-directory: .
       
       - name: Build
-        run: dotnet build templates/root --configuration Release
+        run: dotnet build templates/root/CratisApp.sln --configuration Release
         working-directory: .
         timeout-minutes: 10
       
       - name: Test
-        run: dotnet test templates/root/Tests --configuration Release --no-build
+        run: dotnet test templates/root/CratisApp.sln --configuration Release --no-build
         working-directory: .
         timeout-minutes: 10
       
@@ -76,7 +76,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'yarn'
       
       - name: Install Dependencies
@@ -107,7 +107,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       
       - name: Install Documentation Tools
@@ -130,7 +130,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
       
       - name: Run Corpus Check

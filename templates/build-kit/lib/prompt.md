@@ -5,13 +5,13 @@ You are an autonomous agent reacting to slice status change events on an Eventmo
 ## Your Loop
 
 1. Read `AGENT.md` to load accumulated learnings before doing anything else.
-2. Read `.build-kit-cratis-csharp/tasks.json`.
+2. Read `.build-kit/tasks.json`.
 3. If `tasks.json` is empty or missing, reply with:
    <promise>IDLE</promise>
    and stop.
 4. Pick the **oldest task** (earliest `createdAt`).
 5. Execute the task — see the Execution section below.
-6. After execution, remove that task from the array and write `.build-kit-cratis-csharp/tasks.json` back.
+6. After execution, remove that task from the array and write `.build-kit/tasks.json` back.
 7. Append a progress entry to `progress.txt` (create if missing).
 8. Update `AGENT.md` with any new reusable learnings discovered this iteration.
 9. Reply normally so the next iteration can pick up the next task.
@@ -50,7 +50,7 @@ This is the build trigger. Setting `InProgress` and building are one atomic step
 
 1. Immediately call `/update-slice-status` to set the slice to `InProgress` on the board.
 
-2. Read the slice definition from `.build-kit-cratis-csharp/.slices/<contextSlug>/<sliceFolder>/slice.json` (written by `/load-slice`).
+2. Read the slice definition from `.build-kit/.slices/<contextSlug>/<sliceFolder>/slice.json` (written by `/load-slice`).
 
 3. Determine the **slice type** from the slice.json:
    - **Translation** — `sliceType === "TRANSLATION"` → read `description` and `notes` from slice.json for hints; default to `/build-automation` if nothing else is specified
@@ -89,7 +89,7 @@ Use the skills available in `.claude/skills/` to interact with the board.
 
 ## Updating tasks.json
 
-After completing a task, remove it from the array and write the updated array back to `.build-kit-cratis-csharp/tasks.json`. If the array is now empty, write `[]`.
+After completing a task, remove it from the array and write the updated array back to `.build-kit/tasks.json`. If the array is now empty, write `[]`.
 
 ## Progress Report Format
 
@@ -110,7 +110,7 @@ Learnings:
 
 ## Stop Condition
 
-If `.build-kit-cratis-csharp/tasks.json` is empty (`[]`) or does not exist, reply with:
+If `.build-kit/tasks.json` is empty (`[]`) or does not exist, reply with:
 <promise>IDLE</promise>
 
 ## Updating AGENT.md
