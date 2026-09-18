@@ -27,20 +27,23 @@ on:
       - 'package.json'
       - '.cratis/ai.json'
       - '.github/workflows/publish.yml'
-  schedule:
-    - cron: '0 5 * * 1'
 
 permissions:
   contents: write
 
 jobs:
-  kit:
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
-    # This repository owns the reusable kit-release workflow; the Kotlin and Java kits call it as
-    # Cratis/Eventmodelers-Build-Kit-CSharp/.github/workflows/kit-release.yml@main.
-    uses: ./.github/workflows/kit-release.yml
-    secrets:
-      commit-token: ${{ secrets.KIT_RELEASE_TOKEN }}
-    with:
-      version: ${{ github.event.inputs.version }}
-      release-notes: ${{ github.event.inputs.release-notes }}
+  release:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Release
+        id: release
+        uses: cratis/release-action@v1
+        with:
+          version: ${{ github.event.inputs.version }}
+          release-notes: ${{ github.event.inputs.release-notes }}
