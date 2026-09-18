@@ -145,6 +145,11 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'no-release')
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Check for Documentation Changes
         run: |
           echo "✅ PR marked as no-release"
