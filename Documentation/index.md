@@ -1,10 +1,10 @@
 ---
-title: Eventmodelers Build Kit - CSharp
+title: Eventmodelers Build Kit - C#
 description: Real-time Claude agent that connects to the Eventmodelers Platform and implements board slices as Cratis (Arc + Chronicle) vertical slices in a .NET / C# project
 tableOfContents: false
 ---
 
-# Eventmodelers Build Kit - CSharp
+# Eventmodelers Build Kit - C#
 
 Real-time Claude agent that connects to the Eventmodelers Platform and implements board slices as Cratis (Arc + Chronicle) vertical slices in a .NET / C# project.
 
@@ -22,17 +22,15 @@ The entire process happens automatically, with your Claude agent implementing th
 
 ## Where to Start
 
-- **[Getting Started](getting-started/)** — Install the kit and run your first slice from Planned to Done
-- **[Connect a Board](guides/connect-a-board.md)** — Set up your Eventmodelers board credentials
-- **[Run Without Credentials](guides/run-without-credentials.md)** — Run the kit in local/offline mode
-- **[Target Another Project](guides/target-another-project.md)** — Point the kit to an existing C# project
-- **[Recover a Stuck Slice](guides/recover-stuck-slice.md)** — Fix slices that are stuck in `InProgress` or `Blocked`
+- **[Install the Kit](getting-started/install.md)** — Get up and running in five minutes
+- **[Run Your First Slice](getting-started/first-slice.md)** — Watch a slice go from `Planned` to `Done`
+- **[Connect a Board](guides/connect-a-board.md)** — Wire the kit up to your Eventmodelers board
 
 ## How It Works
 
 The kit implements the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits):
 
-1. **Real-time board subscription** — The kit subscribes to your board's slice status changes via Supabase or PocketBase
+1. **Real-time board subscription** — The kit subscribes to your board's slice status changes
 2. **Status-based triggers** — Two independent loops:
    - `tasks.json` non-empty → run `prompt.md` (reacts to status changes)
    - Slice is `Planned` in `.slices/*/index.json` → run `backend-prompt.md` (builds one slice)
@@ -41,10 +39,14 @@ The kit implements the [Eventmodelers Build Kits platform contract](https://gith
    - `projections`/`queries`/`readModel` → `build-state-view` (read models)
    - Otherwise (`commands`/`events`) → `build-state-change` (commands/events)
 4. **Cratis conformance** — Generated slices follow Cratis best practices:
-   - One `.cs` per slice with `[Command]` and `[EventType]`
-   - `ConceptAs<T>`/`EventSourceId<T>` instead of raw primitives
-   - No nullable event properties, no `IEventLog` injection
-   - Namespace mirrors folder structure
+   - One `.cs` file per slice — every backend artifact (command, event, reactor) lives together
+   - `[Command]` records carry a `Handle()` method — no separate handler class
+   - `[EventType]` records use past-tense, self-describing names and take no attribute arguments
+   - No nullable event properties — model an optional fact as a separate event instead
+   - `ConceptAs<T>` / `EventSourceId<T>` replace raw primitives for identities and values
+   - Namespace mirrors the folder structure
+
+See [Understanding the Loop](understand/the-loop.md) for the full mechanics.
 
 ## Place in the Cratis Ecosystem
 
@@ -52,7 +54,7 @@ This kit sits between the [Eventmodelers Platform](https://app.eventmodelers.ai)
 
 - **Upstream**: [Eventmodelers Build Kits](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits) — The platform that manages board slices
 - **This Repository**: [Eventmodelers-Build-Kit-CSharp](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp) — The C# implementation
-- **Downstream**: [Cratis Chronicle](https://github.com/Cratis/Chronicle) + [Cratis Arc](https://github.com/Cratis/Arc) — The framework that generates the vertical slices
+- **Downstream**: [Cratis Chronicle](https://github.com/Cratis/Chronicle) + [Cratis Arc](https://github.com/Cratis/Arc) — The framework the generated slices build on
 
 See the sibling kits for other language implementations: [Kotlin](https://github.com/Cratis/Eventmodelers-Build-Kit-Kotlin) and [Java](https://github.com/Cratis/Eventmodelers-Build-Kit-Java).
 
@@ -81,11 +83,11 @@ node .build-kit/ralph-claude.js
 1. [Install the kit](getting-started/install.md)
 2. [Connect your Eventmodelers board](guides/connect-a-board.md)
 3. [Mark a slice as `Planned`](https://app.eventmodelers.ai) on your board
-4. Watch the kit automatically implement it as a Cratis vertical slice
+4. Watch the kit automatically implement it as a Cratis vertical slice — see [Run Your First Slice](getting-started/first-slice.md)
 
 ## See Also
 
 - [Understanding the Loop](understand/the-loop.md) — How the two triggers work independently
-- [Slice-Type Routing](reference/slice-type-routing.md) — How the kit routes to the correct build skill
-- [Cratis Conventions](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/tree/main/templates/.claude/skills/_shared/cratis-conventions.md) — The conventions the kit enforces
-- [Platform API](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits/tree/main/eventmodelers-cli/shared/skills) — The platform skills the kit uses
+- [CLI Commands](reference/cli-commands.md) — `install`, `uninstall`, and `status`
+- [Cratis Conventions](https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp/tree/main/templates/.claude/skills/_shared/cratis-conventions.md) — The conventions the kit enforces, generated from the Cratis AI corpus
+- [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits) — The platform skills the kit uses

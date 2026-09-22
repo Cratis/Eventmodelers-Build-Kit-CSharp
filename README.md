@@ -25,7 +25,7 @@ This kit bridges the gap between the [Eventmodelers Platform](https://app.eventm
 | **Cratis Chronicle** | Event sourcing engine that powers the generated slices |
 | **Cratis Arc** | CQRS framework that provides commands, queries, and projections |
 
-The kit follows the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits) and generates slices that follow [Cratis best practices](Documentation/reference/cratis-conventions.md).
+The kit follows the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits) and generates slices that follow [Cratis best practices](templates/.claude/skills/_shared/cratis-conventions.md).
 
 ## Problem It Solves
 
@@ -85,7 +85,7 @@ Every generated slice follows these rules:
 - **Namespace mirrors folder structure** — Clear navigation by feature
 - **No `IEventLog` injection** — Express appends through return types
 
-See [Cratis Conventions](Documentation/reference/cratis-conventions.md) for the full list.
+See [Cratis Conventions](templates/.claude/skills/_shared/cratis-conventions.md) for the full list.
 
 ## Installation
 
@@ -217,7 +217,7 @@ The kit provides these Claude skills:
 | **`load-slice`** | Load a slice from the board |
 | **`update-slice-status`** | Update a slice's status on the board |
 
-See [Skills](Documentation/reference/skills.md) for the full documentation.
+See [Understanding the Loop](Documentation/understand/the-loop.md) for how these skills fit into the agent loop.
 
 ## Testing
 
@@ -264,7 +264,7 @@ If a slice is stuck in `InProgress`:
 3. Run tests: `dotnet test`
 4. Update the slice status manually: [app.eventmodelers.ai](https://app.eventmodelers.ai)
 
-See [Recover a Stuck Slice](Documentation/guides/recover-stuck-slice.md) for the full process.
+See [The Loop and Triggers](Documentation/understand/the-loop.md#running-without-board-credentials) for how the build trigger behaves independently of board connectivity.
 
 ## See Also
 
