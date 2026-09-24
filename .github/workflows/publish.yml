@@ -29,6 +29,7 @@ on:
       - '.github/workflows/publish.yml'
 
 permissions:
+  issues: write
   contents: write
 
 jobs:
