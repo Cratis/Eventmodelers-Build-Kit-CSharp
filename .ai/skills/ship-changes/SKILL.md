@@ -140,29 +140,40 @@ Use `mcp_github_github_create_pull_request` with:
 ### PR description format
 
 Follow `.github/pull_request_template.md` exactly, and write the body as
-release notes. Include only non-empty sections.
+release notes: the description is published verbatim as the GitHub release. Include only non-empty sections.
 
 ```markdown
-# Summary
-<optional short overview>
+<optional short summary of prose, only when one theme spans the bullets>
 
 ## Added
+
 - <release-note bullet> (#<actual-issue-number>)
 
 ## Changed
-- <release-note bullet> (#<actual-issue-number>)
+
+- <release-note bullet> (part of #<actual-issue-number>)
 
 ## Fixed
+
 - <release-note bullet> (#<actual-issue-number>)
 ```
 
 Rules:
 
 - Bullets are short, release-note ready, written for a user reading the changelog.
-- Use `# Summary` when the release-note bullets need context. The summary should
-  explain what was fixed from the consumer's point of view and why the fix matters
-  when that context is useful, instead of listing implementation details.
-- End every bullet with `(#<N>)` using the **real** GitHub issue number. Search issues first. If there is no issue, omit the reference entirely — never write `(#issue)` or reuse an example number.
+- A summary is optional, comes first, and appears only when one cohesive theme spans the bullets. Use
+  **either** a `## Summary` section (level 2; `# Summary` is the wrong level and fails the check) **or**
+  one unheaded lead paragraph of one to three sentences — never both. Explain what changed from the
+  consumer's point of view, not implementation details.
+- Use only the sections `## Added`, `## Changed`, `## Fixed`, `## Removed`, `## Security`, `## Deprecated`,
+  in that order, and only when they have bullets. Add no other heading (no Test plan, Verification, Overview).
+- End a bullet with `(#<N>)` using the **real** GitHub issue number only when this PR fully delivers that
+  issue. Use `(part of #<N>)` when it only partly addresses it, and `Cratis/<Repo>#<N>` for another
+  repository. One `(#<N>)` per issue — write `(#1) (#2)`, never `(#1, #2)`. Search issues first. If there is no issue,
+  omit the reference entirely — never write `(#issue)` or reuse an example number.
+- Test plan, verification results, review notes and which agent or model wrote the PR go in a PR comment,
+  never the description.
+- Use absolute `https://` links; relative links break on the release page.
 - Remove any empty sections — no blank headings.
 - Never include any Copilot prompt transcript or "Original prompt" block.
 
