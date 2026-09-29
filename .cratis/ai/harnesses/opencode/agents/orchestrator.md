@@ -8,7 +8,6 @@ description: >
   as a team: mixed implementation + documentation + review, multi-feature work,
   large refactors, or any goal that spans more than one concern.
 mode: subagent
-model: anthropic/claude-sonnet-4-5
 permission:
   edit: deny
   bash: allow
@@ -114,7 +113,7 @@ When you receive a goal:
 - [ ] [security-reviewer] Security review of all changed files
 
 ### Phase 5 — Documentation (if applicable)
-- [ ] [write-documentation skill] Document <feature/concept>
+- [ ] [documentation] Document <feature/concept> in its authored source with cratis-documentation-writing (or cratis-engineering-docs-authoring) and cratis-technical-examples for code, when the repository's profiles install them; otherwise follow the repository's own documentation rules
 ```
 
 ---
@@ -152,7 +151,7 @@ For implementation, the applicable changed-lane gates must pass. Mark unrelated 
 - [ ] `code-reviewer` finds no blocking issues
 - [ ] `security-reviewer` finds no vulnerabilities
 - [ ] All documentation is complete and accurate (if required)
-- [ ] PR description follows the pull request template
+- [ ] PR description follows the pull request template and the release-note contract in `pull-requests.md`; test and review notes are in a PR comment
 
 ---
 

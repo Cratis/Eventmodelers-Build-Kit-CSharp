@@ -2,6 +2,9 @@
 name: cratis-application-react-specifications
 description: Write specifications for the React and TypeScript surface of a Cratis application slice — view models, helpers, command orchestration, and narrow component behavior — using Vitest with Mocha-style describe/it, Sinon, and the Chai should interface. Use when adding or changing frontend behavior in an application that consumes Cratis. Do not use for backend scenarios or for specifications inside a Cratis framework package.
 license: MIT
+cratis-hint-paths:
+  - "**/for_*/**/*.ts"
+  - "**/for_*/**/*.tsx"
 ---
 <!-- cratis-ai-managed: skills/cratis-application-react-specifications/SKILL.md -->
 
@@ -58,7 +61,7 @@ Behavior that can regress without TypeScript catching it:
 - **Component rendering** only when the markup, a disabled state, or wrapper
   behavior is genuinely the point.
 
-Do **not** specify generated Cratis proxies, PrimeReact or framework internals,
+Do **not** specify generated Cratis proxies, Cratis Components or framework internals,
 CSS pixel-perfection, snapshots, or trivial presentational pass-throughs.
 
 ## View-model specification — the default shape
@@ -110,9 +113,9 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, beforeEach, it, vi } from 'vitest';
 
-vi.mock('primereact/dialog', () => ({
-    Dialog: (props: { footer?: React.ReactNode; children?: React.ReactNode }) =>
-        React.createElement('div', null, props.footer, props.children),
+vi.mock('@cratis/components/Dialogs', () => ({
+    Dialog: (props: { buttons?: React.ReactNode; children?: React.ReactNode }) =>
+        React.createElement('div', null, props.children, props.buttons),
 }));
 
 describe('when rendered while busy', () => {

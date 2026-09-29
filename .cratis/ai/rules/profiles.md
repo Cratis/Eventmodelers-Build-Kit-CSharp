@@ -1,4 +1,10 @@
+---
+applyTo: "**/.cratis/**"
+paths:
+  - "**/.cratis/**"
+---
 <!-- cratis-ai-managed: rules/profiles.md -->
+
 # AI Corpus Profiles
 
 Profiles determine which rules and skills apply to your work. They define the scope of the AI corpus and which documentation, conventions, and skills are available.
@@ -54,14 +60,15 @@ The complete list of available profiles is defined in [profile-catalog.json](../
 | `cratis/application/arc-only` | Arc without Chronicle | `cratis/arc/core`, `cratis/fundamentals`, `cratis/specifications/dotnet` |
 | `cratis/application/chronicle-dotnet` | Chronicle .NET client | `cratis/chronicle/client-dotnet`, `cratis/chronicle/core`, `cratis/fundamentals`, `cratis/specifications/dotnet` |
 | `cratis/application/elixir` | Elixir Chronicle client | `cratis/chronicle/client-elixir`, `cratis/language/elixir` |
-| `cratis/application/kotlin` | Kotlin Chronicle client | `cratis/arc/client-kotlin`, `cratis/chronicle/client-kotlin`, `cratis/language/kotlin` |
+| `cratis/application/kotlin` | Kotlin Arc + Chronicle application | `cratis/arc/client-kotlin`, `cratis/chronicle/client-kotlin`, `cratis/language/kotlin` |
+| `cratis/application/java` | Java Arc + Chronicle application | `cratis/arc/client-kotlin`, `cratis/chronicle/client-java`, `cratis/language/java` |
 
 ### Framework Profiles
 
 | Profile ID | Description | Automatically Includes |
 |---|---|---|
-| `cratis/arc` | Arc CQRS framework | `cratis/arc/csharp`, `cratis/arc/kotlin` |
-| `cratis/chronicle` | Chronicle event sourcing engine | `cratis/chronicle/compliance`, `cratis/chronicle/csharp`, `cratis/chronicle/elixir`, `cratis/chronicle/kotlin`, `cratis/chronicle/multi-tenancy`, `cratis/chronicle/typescript`, `cratis/chronicle/web-workbench` |
+| `cratis/arc` | Arc CQRS framework | `cratis/arc/csharp`, `cratis/arc/java`, `cratis/arc/kotlin` |
+| `cratis/chronicle` | Chronicle event sourcing engine | `cratis/chronicle/compliance`, `cratis/chronicle/csharp`, `cratis/chronicle/elixir`, `cratis/chronicle/java`, `cratis/chronicle/kotlin`, `cratis/chronicle/multi-tenancy`, `cratis/chronicle/typescript`, `cratis/chronicle/web-workbench` |
 | `cratis/components` | React component library | (no child profiles) |
 | `cratis/fundamentals` | Core primitives (`ConceptAs<T>`, `EventSourceId<T>`) | (no child profiles) |
 | `cratis/specifications` | Specification framework | (no child profiles) |
@@ -83,18 +90,63 @@ The complete list of available profiles is defined in [profile-catalog.json](../
 | `cratis/language/typescript` | TypeScript language conventions |
 | `cratis/language/elixir` | Elixir language conventions |
 | `cratis/language/kotlin` | Kotlin language conventions |
+| `cratis/language/java` | Java language conventions |
+
+### Arc and Chronicle on the JVM (Kotlin and Java)
+
+Arc.Kotlin (`io.cratis:arc`) and its optional Chronicle integration
+(`io.cratis:arc-chronicle-spring-boot-starter`) bring the same command/query
+model-bound shape to the JVM that Arc .NET brings to C#, for both Kotlin and
+Java application code. `cratis/arc/client-kotlin` carries the skills for both
+languages — Java application code still needs Kotlin and KSP on the build,
+since Arc generates Kotlin adapters for Java declarations.
+
+| Skill | Covers |
+| --- | --- |
+| `cratis-arc-command-kotlin` | `@Command`, `handle()`/`provide()`, Chronicle event responses, command authorization, TypeScript proxy generation |
+| `cratis-arc-query-kotlin` | `@ReadModel` queries, GET vs RFC QUERY, observable queries (`Flow`, `Flow.Publisher`, RxJava 3) over SSE/WebSocket |
+| `cratis-arc-validation-kotlin` | `FluentModelValidator` shared rules, `CommandValidator`/`QueryValidator`/`ConceptValidator`/`ModelValidator`, Jakarta constraints |
+
+Standalone Chronicle client usage (no Arc) for Kotlin and Java is
+`cratis-chronicle-client-kotlin`, reused by `cratis/chronicle/client-java`.
+JVM language conventions are `kotlin.md` and `java.md`.
 
 ### Specialized Profiles
 
 | Profile ID | Description |
 |---|---|
-| `cratis/documentation` | Documentation writing |
+| `cratis/documentation` | Reader-centered product docs, technical examples, release notes, and voice review |
+| `cratis/content` | Release notes, social feed posts, voice review, content length, and developer marketing and distribution |
 | `cratis/review` | Code review, performance, security |
 | `cratis/studio` | Studio MCP safety guidance |
 | `cratis/cli` | CLI operations |
 | `cratis/lens` | Lens browser extension |
-| `cratis/screenplay` | Screenplay event modeling |
+| `cratis/screenplay` | Event modeling and information-system design with Screenplay — the method and the whole `.play` language |
 | `cratis/stage` | Stage rendering and sandbox |
+| `cratis/modeling/screenplay-stage` | Screenplay + Stage together |
+
+### Event modeling with Screenplay
+
+`cratis/screenplay` carries the **method** and the **language**, split one skill
+per surface so only the relevant one loads:
+
+| Skill | Covers |
+| --- | --- |
+| `cratis-screenplay-event-modeling` | Domain discovery, the nine-step workflow, the four slice types, model validation |
+| `cratis-screenplay-command-surface` | `command`, `event`, `validate`, `authorize`, `produces`, `concurrency`, `constraint`, `concept`, `$context` |
+| `cratis-screenplay-projections` | The Projection Declaration Language and the `reducer` escape hatch |
+| `cratis-screenplay-read-surface` | `readmodel`, `query`, `screen`, name resolution |
+| `cratis-screenplay-ui-composition` | `layout`, templates, `form`, `contribute`, `ui profile`, `theme`, `$strings`, `file` |
+| `cratis-screenplay-captures-and-reactions` | The Change Data Capture Language, `reaction`, `trigger` |
+| `cratis-screenplay-specifications` | Given/when/then and the reference execution |
+| `cratis-screenplay-model-authoring` | Typed MCP authoring, model navigation/refactoring, compiler diagnostics, and source-versus-executable readiness |
+
+The profile also selects the corpus-owned Screenplay MCP declaration from
+`mcp-servers.json`. The Cratis CLI hosts the server as `cratis screenplay mcp`
+and registers a scoped entry for supported clients without replacing their other
+servers. Inspect install/status results for adapter support or configuration
+conflicts. The conventional model root is `.cratis/screenplay/`; project-owned
+configuration can choose another root.
 
 ## How to Use Profiles
 
@@ -179,19 +231,14 @@ Select language profiles when working with specific languages:
 }
 ```
 
-### 5. Agent Harnesses Exclusion
+### 5. Skills in agent harnesses
 
-**Important:** The Agent Harnesses (`.agents/` folder) should **not** include the `skills` folder from the AI corpus. The skills folder is managed separately and should be excluded from agent plugin installations.
-
-When configuring agent plugins:
-- The `skills` field in `marketplace.json` should point to an empty array or be omitted
-- The `skills` symlink in `.agents/plugins/` should not reference `../.cratis/ai/skills`
-- Agent Harnesses should only include the rules and profile-catalog.json for profile resolution
-
-This ensures that:
-1. Skills are managed independently from agent plugins
-2. The AI corpus remains the source of truth for rules and profiles
-3. Agent Harnesses don't duplicate or override the skills folder
+The canonical skills live in `.cratis/ai/skills/`. Supported harnesses expose
+that tree through generated links or package integration; marketplace plugins
+may point their `skills` field at `./skills`. Edit the canonical skill and its
+profile-catalog entry in this repository, not a consuming repository's managed
+copy or a generated harness adapter. Check reachability through the selected
+profiles as well as plugin discovery, which can expose the whole skill tree.
 
 ## Profile-Specific Rules
 

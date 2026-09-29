@@ -5,7 +5,6 @@ description: >
   to the right specialist agent, and ensures quality gates are met before
   the work is considered done.
 mode: subagent
-model: anthropic/claude-sonnet-4-5
 permission:
   edit: deny
   bash: allow
@@ -115,7 +114,7 @@ For an implemented application slice, require the applicable changed-lane gates 
 - [ ] `Documentation/verify-markdown.sh` passes when documentation is added or changed
 - [ ] Code review by `code-reviewer` finds no blocking issues
 - [ ] Security review by `security-reviewer` finds no vulnerabilities
-- [ ] PR description follows the pull request template
+- [ ] PR description follows the pull request template and the release-note contract in `pull-requests.md`; test and review notes are in a PR comment
 
 ---
 
