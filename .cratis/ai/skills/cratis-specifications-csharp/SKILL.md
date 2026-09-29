@@ -2,6 +2,8 @@
 name: cratis-specifications-csharp
 description: Write C# specifications with Cratis.Specifications using the Establish/Because/should_ pattern and the for_/when_/and_ folder hierarchy. Use when adding or restructuring C# specs in any Cratis repository, choosing between an isolated unit spec and an in-process scenario spec, or building reusable given/ contexts. Do not use for TypeScript or React specs, and do not use it to decide what a command, projection, or reactor should do.
 license: MIT
+metadata:
+  cratis-hint-paths: "**/for_*/**/*.cs"
 ---
 <!-- cratis-ai-managed: skills/cratis-specifications-csharp/SKILL.md -->
 
@@ -17,9 +19,9 @@ This skill is verified against these exact public releases:
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| `Cratis.Specifications` | `4.1.0` | `Specification` base, `Catch.Exception`, `ShouldXxx` assertions |
-| `Cratis.Arc.Testing` | `22.10.4` | `CommandScenario<TCommand>` and `CommandResult` assertions |
-| `Cratis.Chronicle.Testing` | `17.0.0` | `EventScenario`, `ReadModelScenario<T>`, `ReactorScenario<T>` |
+| `Cratis.Specifications` | `4.1.1` | `Specification` base, `Catch.Exception`, `ShouldXxx` assertions |
+| `Cratis.Arc.Testing` | `22.16.0` | `CommandScenario<TCommand>` and `CommandResult` assertions |
+| `Cratis.Chronicle.Testing` | `18.3.0` | `EventScenario`, `ReadModelScenario<T>`, `ReactorScenario<T>` |
 
 Reverify against the owning product repository before claiming support for
 another version. Never translate an assertion or helper name from memory.
