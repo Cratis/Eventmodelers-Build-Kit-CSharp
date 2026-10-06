@@ -1,5 +1,5 @@
 {
-  "SourceRevision": "3497f63d9977ca875bed2a8f6de4660e8248ce6f",
+  "SourceRevision": "3026375362ac151b44ca5139be06fc62e79cea96",
   "Files": [
     {
       "Source": "agents/backend-developer.md",
@@ -319,7 +319,7 @@
     {
       "Source": "hooks/README.md",
       "Destination": "hooks/README.md",
-      "Hash": "EE415A909CE49A7137E43D2BB06F1456387DBF568B124ED5F0D79732EB9F6FDE"
+      "Hash": "5E6D4BA61DCADA1E76636E2CD18347C1837153698E90EBE09921B106F800C038"
     },
     {
       "Source": "hooks/agent-stop.md",
@@ -334,7 +334,7 @@
     {
       "Source": "hooks/scripts/cratis-check-pr.mjs",
       "Destination": "hooks/scripts/cratis-check-pr.mjs",
-      "Hash": "14AF55C627EB55D94727C4C6D4E5ED1E8AEAC1AF794EB11841719F88F3B67712"
+      "Hash": "93BFDBCE9B7E26540B4561C354644490212D4D13590BED3853AB53774F3B1620"
     },
     {
       "Source": "hooks/scripts/cratis-guard-pr-body.sh",
@@ -379,7 +379,7 @@
     {
       "Source": "hooks/scripts/cratis-store-mutations.json",
       "Destination": "hooks/scripts/cratis-store-mutations.json",
-      "Hash": "7999C8BBED4476EABB572318CA2117F399128DAFD7FB5BC0676032002DC70381"
+      "Hash": "D41A3AD22C21F859DCE9844641FA92103B8FB6934905682C52B7D22A768CB0E0"
     },
     {
       "Source": "hooks/scripts/hook-lib.sh",
@@ -414,7 +414,7 @@
     {
       "Source": "hooks/settings.template.json",
       "Destination": "hooks/settings.template.json",
-      "Hash": "F76DC39A2E059285B653C8C89AABE37E3115FD77F59A64AD3345FCCB407D433B"
+      "Hash": "A0AD28641F04B76DD036E5CA5AAB87495BCFFD9FA50AFA1D215F8849B7C60DB1"
     },
     {
       "Source": "mcp-servers.json",
