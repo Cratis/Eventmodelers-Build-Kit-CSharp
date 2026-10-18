@@ -1,8 +1,10 @@
 name: Publish
 
+# Merged pull requests queue in one group so every release runs in order; closes of unmerged pull requests
+# get their own group and never hold the release queue (Cratis/Workflows#162).
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  group: ${{ (github.event_name != 'pull_request' || github.event.pull_request.merged == true) && format('publish-{0}', github.repository) || format('publish-unmerged-{0}', github.run_id) }}
+  queue: max
 
 on:
   workflow_dispatch:
