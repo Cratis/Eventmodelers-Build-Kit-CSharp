@@ -15,16 +15,22 @@ The owning repository remains authoritative when it defines a stricter format.
 ## Code and commands
 
 - Tag every code fence with its language.
-- Dedent copied snippets to their natural source indentation.
-- Use complete, runnable examples without ellipses.
-- Verify examples against first-party product source.
+- Dedent extracted snippets to their natural source indentation.
+- Use the **cratis-technical-examples** workflow: substantial examples come
+  from compiled sample or spec source; short illustrations are verified against
+  first-party product source. State any omitted setup rather than implying an
+  excerpt is a standalone runnable program.
 - Use the client-owned multi-language snippet mechanism when shared product docs
   support more than one client; do not hand-translate unsupported clients.
 
 ## Links and navigation
 
 - Use descriptive link text, never "here" or "read more."
-- Use root-relative links between products.
+- Use root-relative links between products (`/arc/backend/csharp/embedded-event-model/`), never
+  `https://cratis.io/...` or GitHub `blob/` URLs.
+- Do not use DocFX `xref:` symbol links; the site turns them into plain text. Name an API type in
+  inline code and link to the page that documents it.
+- Named Markdown references such as `[Install the CLI][cli-installation]` work when the same page defines `[cli-installation]: /cli/getting-started/`. Labels do not cross repository or page boundaries; the verified product route does. Link another product's installation procedure before using its commands rather than duplicating its setup steps.
 - Keep site-level links extensionless.
 - Preserve the owning product repository's source-link convention.
 - Do not edit generated synchronized pages; edit the owning source repository.
