@@ -11,7 +11,8 @@
   "profiles": [
     "cratis/application/csharp",
     "cratis/application/arc-chronicle",
-    "cratis/application/react"
+    "cratis/application/react",
+    "cratis/engineering/core"
   ],
   "languages": [
     "csharp",
