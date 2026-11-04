@@ -13,6 +13,7 @@ import {
   writeFileSync,
   readFileSync,
   appendFileSync,
+  chmodSync,
 } from 'fs';
 import { execSync } from 'child_process';
 import { createInterface } from 'readline';
@@ -140,16 +141,17 @@ program
       console.error('  ⚠️  npm install failed in .build-kit — run it manually');
     }
 
-    // Add .build-kit/ to project root .gitignore
+    // Add .build-kit/ and .eventmodelers/ (local credentials) to project root .gitignore
     const gitignorePath = join(rootDir, '.gitignore');
-    const gitignoreEntry = '.build-kit/';
-    if (existsSync(gitignorePath)) {
-      const content = readFileSync(gitignorePath, 'utf-8');
-      if (!content.includes(gitignoreEntry)) {
-        appendFileSync(gitignorePath, `\n${gitignoreEntry}\n`);
+    for (const gitignoreEntry of ['.build-kit/', '.eventmodelers/']) {
+      if (existsSync(gitignorePath)) {
+        const content = readFileSync(gitignorePath, 'utf-8');
+        if (!content.split(/\r?\n/).some(line => line.trim() === gitignoreEntry)) {
+          appendFileSync(gitignorePath, `\n${gitignoreEntry}\n`);
+        }
+      } else {
+        writeFileSync(gitignorePath, `${gitignoreEntry}\n`);
       }
-    } else {
-      writeFileSync(gitignorePath, `${gitignoreEntry}\n`);
     }
 
     // P2: Create config file in project root (not just kit directory)
@@ -190,9 +192,13 @@ program
       if (token)   config.token          = token;
 
       // Write to project root (P2: config location)
-      writeFileSync(rootConfigPath, JSON.stringify(config, null, 2));
+      // Credentials are owner-readable only (best effort where the platform supports modes)
+      writeFileSync(rootConfigPath, JSON.stringify(config, null, 2), { mode: 0o600 });
       // Also copy to kit directory as optional override
-      writeFileSync(kitConfigPath, JSON.stringify(config, null, 2));
+      writeFileSync(kitConfigPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+      for (const path of [rootConfigPath, kitConfigPath]) {
+        try { chmodSync(path, 0o600); } catch { /* platform without POSIX modes */ }
+      }
       
       if (config.organizationId && config.boardId && config.token) {
         console.log(`\n  ✓ Credentials saved to .eventmodelers/config.json (project root)`);
