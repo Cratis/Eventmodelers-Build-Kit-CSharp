@@ -6,7 +6,9 @@ tableOfContents: false
 
 # Connect a Board
 
-The kit needs three values to talk to your Eventmodelers board: an **organization ID**, a **board ID**, and an API **token**. This guide covers getting them, where they're stored, and how to change them later.
+After [installing the kit](../getting-started/install.md), configure the organization ID, board ID, and API token for the board you want to use. This guide separates saved settings you can inspect locally from an access check made by the `connect` skill.
+
+Before saving or pasting credentials, protect the project-root config: add `.eventmodelers/config.json` to the root `.gitignore`. From the project root, check `git check-ignore -v -- .eventmodelers/config.json` for a matching ignore rule and `git ls-files -- .eventmodelers/config.json` for no tracked path. Stop if either check fails; resolve the ignore or tracking problem before saving credentials or sharing the project. Ignoring a file does not untrack it.
 
 ## Get your credentials
 
@@ -35,22 +37,22 @@ If you skipped credentials at install time, or need to change them later, use `/
 1. Checks for inline overrides (`board=<uuid>`, `token=<uuid>`, `org=<uuid>`, `baseUrl=<url>`) in the prompt that invoked it
 2. Falls back to `.eventmodelers/config.json` for any value not overridden
 3. Asks you for anything still missing, one field at a time
-4. Writes the resolved config back to disk
+4. Saves the config after collecting missing values; skips saving when all four values are already resolved
 
-Every other skill in the kit (`build-state-change`, `build-state-view`, `build-automation`, `load-slice`, `update-slice-status`) calls `connect` first, so you never have to wire credentials into each one individually.
+Use `connect` for board access. The board-facing `load-slice` and `update-slice-status` skills invoke it before making board requests.
 
 ## Where credentials live
 
-The installer writes the same config to two places:
+When saving prompted credentials, the installer writes the same config to two places. The consumers read them differently:
 
 | Location | Purpose |
 |---|---|
-| `.eventmodelers/config.json` (project root) | The primary config, checked first |
-| `.build-kit/.eventmodelers/config.json` (kit directory) | An optional override, checked second |
+| `.eventmodelers/config.json` (project root) | Read by `status` for displayed values; read by `connect` in its working directory |
+| `.build-kit/.eventmodelers/config.json` (kit directory) | Read by the agent loop, not a fallback for `connect` |
 
-Resolution order is **inline parameter > project-root config > kit-directory config > ask the user**. Both files are excluded from version control automatically.
+For `connect`, resolution is **inline parameter > config file > ask the user**, using `.eventmodelers/config.json` in its working directory. The loop reads the kit-directory file separately; it does not fall back to the project-root file. The installer adds `.build-kit/` to the project's ignore rules, not the root config path. Use the root-config checks above before saving credentials.
 
-The config shape is:
+The installer and loop use `organizationId`; the example includes the explicit `baseUrl` needed for loop synchronization:
 
 ```json
 {
@@ -61,7 +63,9 @@ The config shape is:
 }
 ```
 
-`baseUrl` defaults to `https://api.eventmodelers.ai` and only needs to be set explicitly when pointing at a self-hosted or local instance.
+`connect` defaults a missing `baseUrl` to `https://api.eventmodelers.ai`. The installer's credential prompts need not save a URL. For loop sync, set `baseUrl` explicitly in the kit-directory config or supply `BASE_URL` in the loop's environment; unless all four values are present, the loop runs local-only without platform sync.
+
+When reading a config file, `connect` looks for `organizationId`. It accepts either `organizationId` or `orgId` in pasted input, but its persistence template writes `orgId`. If all four values are already resolved, it skips persistence and verifies them directly. The installer, `status`, and loop use `organizationId`; check that field in the file for the consumer you intend to run.
 
 ## Verify the connection
 
@@ -69,7 +73,7 @@ The config shape is:
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp status
 ```
 
-A working connection prints the organization and board the kit is currently pointed at:
+`status` checks whether the kit, skills, and config files exist. It displays the following values from valid project-root JSON; it does not contact the board:
 
 ```
 Connected to: https://api.eventmodelers.ai
@@ -77,15 +81,17 @@ Organization: <your-org-id>
 Board:        <your-board-id>
 ```
 
+If a config is reported missing, check the named location. Correct invalid JSON before interpreting its saved values. For a board access check, use `/connect` inside Claude Code and inspect its verification result: the skill defines a board request and a success message for a 200 response. That check uses the skill's resolved values, not automatically the loop's separate config. Follow [Run Your First Slice](../getting-started/first-slice.md) to start the loop and inspect one slice once its configuration is ready.
+
 ## Rotate or change credentials
 
-Run `/connect` again with an inline override to switch boards without editing files by hand:
+Run `/connect` again with an inline override to change the board used by the skill:
 
 ```
 /connect board=<new-board-uuid>
 ```
 
-Or edit `.eventmodelers/config.json` directly and restart the loop.
+For direct edits, change the file used by the consumer you intend to run. Restart the loop after changing its kit-directory config; editing `.eventmodelers/config.json` at the project root alone does not update the loop's copy.
 
 ## See Also
 
