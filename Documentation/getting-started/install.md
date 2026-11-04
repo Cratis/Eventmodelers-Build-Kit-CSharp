@@ -6,27 +6,29 @@ tableOfContents: false
 
 # Install the Kit
 
-This tutorial shows you how to install the Eventmodelers Build Kit - C# into your project directory.
+Install the Eventmodelers Build Kit - C# in the project directory where you want the starter app and generated slices. You will check the installed files and settings before starting the loop, then follow one slice through the build.
 
 ## Prerequisites
 
-Before installing, ensure you have:
+Before installing, choose the project directory the kit should write into and make sure you have:
 
 - **Node.js 18+** installed ([Download](https://nodejs.org/))
 - **Claude Code** or another Claude-compatible agent ([Get Claude](https://claude.ai))
 - **Eventmodelers account** with at least one board ([Sign up](https://app.eventmodelers.ai/account))
 
+To build and run the C# starter below, also install the .NET 10 SDK and Docker with Compose support. The starter targets .NET 10; its Compose file supplies the Chronicle development kernel and Aspire Dashboard.
+
 ## Installation
 
 ### Option 1: Direct Git Install (Recommended)
 
-Install directly from this repository:
+From your intended project root, install directly from this repository:
 
 ```bash
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
 ```
 
-This will:
+The installer performs these setup steps; check its output for copy or dependency-install failures before continuing:
 
 1. Copy the **Cratis starter app** (C# backend with Arc + Chronicle, an example slice, and the shared React frontend) into your project root
 2. Create a `.build-kit/` directory with the agent loop and skills
@@ -37,17 +39,17 @@ This will:
 
 ### Option 2: Upstream CLI with Git Stack
 
-Use the upstream Eventmodelers CLI to install this repository as a git stack:
+If you already use the upstream Eventmodelers CLI to manage stacks, use this alternative instead of running both installation commands:
 
 ```bash
 npx @eventmodelers/cli init --stack cratis-csharp --git https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp
 ```
 
-This achieves the same result but uses the upstream CLI's stack management.
+This selects the C# repository through the upstream CLI's stack management. The checks and first-slice walkthrough below concern the installed C# kit, not the sibling language kits.
 
 ## During Installation
 
-The installer prompts for your Eventmodelers credentials:
+The installer first asks whether you already have platform credentials. If you answer yes, it prints the project-root config path and exits so you can paste the config there and re-run the installer. Otherwise, when required values are missing, it prompts for them:
 
 ```
 🔑 Enter your Eventmodelers credentials (press Enter to skip any field):
@@ -62,25 +64,13 @@ field and configure it later — see [Connect a Board](../guides/connect-a-board
 
 ## After Installation
 
-Start the agent loop:
-
-```bash
-node .build-kit/ralph-claude.js
-```
-
-Or, using a local Ollama model (run `ollama serve` first):
-
-```bash
-OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js
-```
-
-Verify the installation:
+From the project root, check what the installer created before starting a long-running process:
 
 ```bash
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp status
 ```
 
-You should see:
+This command reports local files and saved settings, not whether the server accepts your credentials. With the installation and configuration present, its output has this shape:
 
 ```
 .build-kit Status
@@ -95,7 +85,9 @@ Organization: <your-org-id>
 Board:        <your-board-id>
 ```
 
-Build and run the starter app:
+If credentials were skipped or the saved board is not the one you intend to use, finish [Connect a Board](../guides/connect-a-board.md) before starting the board-driven walkthrough. The loop reads `.build-kit/.eventmodelers/config.json`; board sync requires `organizationId`, `boardId`, `token`, and `baseUrl` there. Check that copy as well as the project-root file.
+
+Build and run the starter app from the project root. Run the Compose and build commands first. Keep the backend running in one terminal and run the frontend command in another; the foreground backend process does not return you to a prompt for the next line:
 
 ```bash
 docker-compose up -d           # Chronicle development kernel + Aspire Dashboard
@@ -104,9 +96,21 @@ dotnet run                     # run the backend (http://localhost:5000)
 npm install && npm run dev     # frontend dev server (http://localhost:5173)
 ```
 
+When you are ready to let the agent work in this project, start the Claude loop in a separate terminal and leave its output visible. The launcher uses `--dangerously-skip-permissions`, and the build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify:
+
+```bash
+node .build-kit/ralph-claude.js
+```
+
+The local Ollama launcher is an optional alternative, not an additional process to run alongside Claude. Start `ollama serve` first. This walkthrough follows the Claude launcher; do not assume the two launchers provide identical trigger behavior:
+
+```bash
+OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js
+```
+
 ## Next Steps
 
-Now that the kit is installed:
+With the local files checked, continue through these steps in order. If the loop is already running, leave it running for the first-slice walkthrough:
 
 1. [Connect your Eventmodelers board](../guides/connect-a-board.md)
 2. [Mark a slice as `Planned`](https://app.eventmodelers.ai) on your board
