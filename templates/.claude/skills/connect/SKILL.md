@@ -98,7 +98,7 @@ Once all values are collected, write the config file. When writing, merge with a
 
 ```bash
 mkdir -p .eventmodelers
-cat > .eventmodelers/config.json << 'EOF'
+(umask 077 && cat > .eventmodelers/config.json << 'EOF'
 {
   "token": "<TOKEN>",
   "boardId": "<BOARD_ID>",
@@ -106,21 +106,25 @@ cat > .eventmodelers/config.json << 'EOF'
   "baseUrl": "<BASE_URL>"
 }
 EOF
+)
+chmod 600 .eventmodelers/config.json
 ```
 
-Then ensure `.eventmodelers/config.json` is in `.gitignore`. Check whether it is already present:
+The config holds a credential, so it must be owner-only. Then make sure git ignores the whole `.eventmodelers/` directory. A later `!` rule in `.gitignore` can re-include it, so ask git rather than grepping for the line:
 
 ```bash
-grep -q ".eventmodelers/config.json" .gitignore 2>/dev/null || echo "MISSING"
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git check-ignore -q .eventmodelers/config.json 2>/dev/null || printf '\n.eventmodelers/\n' >> .gitignore
+  git check-ignore -q .eventmodelers/config.json || echo "NOT IGNORED"
+else
+  # No git repository: the line must be present and be the last non-blank line
+  [ "$(grep -v '^[[:space:]]*$' .gitignore 2>/dev/null | tail -n 1)" = ".eventmodelers/" ] || printf '\n.eventmodelers/\n' >> .gitignore
+fi
 ```
 
-If `MISSING`, append it:
+If it prints `NOT IGNORED`, tell the user their ignore rules re-include the credential file and must be fixed before anything is committed.
 
-```bash
-echo ".eventmodelers/config.json" >> .gitignore
-```
-
-Tell the user: `"Config saved to .eventmodelers/config.json and added to .gitignore."`
+Tell the user: `"Config saved to .eventmodelers/config.json (owner-only) and .eventmodelers/ added to .gitignore."`
 
 ---
 
