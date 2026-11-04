@@ -15,6 +15,7 @@ import {
 } from 'fs';
 import { execSync } from 'child_process';
 import {
+  ensureCredentialIgnored,
   mergeGitignore,
   mergeGitignoreFromTemplate,
   restrictCredentialFiles,
@@ -155,6 +156,8 @@ program
     // Add .build-kit/ and .eventmodelers/ (local credentials) to project root .gitignore
     const gitignorePath = join(rootDir, '.gitignore');
     mergeGitignore(gitignorePath, ['.build-kit/', '.eventmodelers/']);
+    // A later negation can re-include the credentials, so confirm with git itself
+    ensureCredentialIgnored(gitignorePath);
 
     // P2: Create config file in project root (not just kit directory)
     // Config resolution: project root > kit directory > home directory

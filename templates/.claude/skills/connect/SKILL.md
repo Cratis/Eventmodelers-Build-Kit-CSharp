@@ -110,17 +110,19 @@ EOF
 chmod 600 .eventmodelers/config.json
 ```
 
-The config holds a credential, so it must be owner-only. Then ensure the whole `.eventmodelers/` directory is in `.gitignore`. Check whether it is already present:
+The config holds a credential, so it must be owner-only. Then make sure git ignores the whole `.eventmodelers/` directory. A later `!` rule in `.gitignore` can re-include it, so ask git rather than grepping for the line:
 
 ```bash
-grep -qx ".eventmodelers/" .gitignore 2>/dev/null || echo "MISSING"
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git check-ignore -q .eventmodelers/config.json 2>/dev/null || printf '\n.eventmodelers/\n' >> .gitignore
+  git check-ignore -q .eventmodelers/config.json || echo "NOT IGNORED"
+else
+  # No git repository: the line must be present and be the last non-blank line
+  [ "$(grep -v '^[[:space:]]*$' .gitignore 2>/dev/null | tail -n 1)" = ".eventmodelers/" ] || printf '\n.eventmodelers/\n' >> .gitignore
+fi
 ```
 
-If `MISSING`, append it (starting on a new line):
-
-```bash
-printf '\n.eventmodelers/\n' >> .gitignore
-```
+If it prints `NOT IGNORED`, tell the user their ignore rules re-include the credential file and must be fixed before anything is committed.
 
 Tell the user: `"Config saved to .eventmodelers/config.json (owner-only) and .eventmodelers/ added to .gitignore."`
 
