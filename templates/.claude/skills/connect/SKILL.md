@@ -98,7 +98,7 @@ Once all values are collected, write the config file. When writing, merge with a
 
 ```bash
 mkdir -p .eventmodelers
-cat > .eventmodelers/config.json << 'EOF'
+(umask 077 && cat > .eventmodelers/config.json << 'EOF'
 {
   "token": "<TOKEN>",
   "boardId": "<BOARD_ID>",
@@ -106,21 +106,23 @@ cat > .eventmodelers/config.json << 'EOF'
   "baseUrl": "<BASE_URL>"
 }
 EOF
+)
+chmod 600 .eventmodelers/config.json
 ```
 
-Then ensure `.eventmodelers/config.json` is in `.gitignore`. Check whether it is already present:
+The config holds a credential, so it must be owner-only. Then ensure the whole `.eventmodelers/` directory is in `.gitignore`. Check whether it is already present:
 
 ```bash
-grep -q ".eventmodelers/config.json" .gitignore 2>/dev/null || echo "MISSING"
+grep -qx ".eventmodelers/" .gitignore 2>/dev/null || echo "MISSING"
 ```
 
-If `MISSING`, append it:
+If `MISSING`, append it (starting on a new line):
 
 ```bash
-echo ".eventmodelers/config.json" >> .gitignore
+printf '\n.eventmodelers/\n' >> .gitignore
 ```
 
-Tell the user: `"Config saved to .eventmodelers/config.json and added to .gitignore."`
+Tell the user: `"Config saved to .eventmodelers/config.json (owner-only) and .eventmodelers/ added to .gitignore."`
 
 ---
 

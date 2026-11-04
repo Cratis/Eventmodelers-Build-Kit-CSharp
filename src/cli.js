@@ -12,10 +12,15 @@ import {
   statSync,
   writeFileSync,
   readFileSync,
-  appendFileSync,
-  chmodSync,
 } from 'fs';
 import { execSync } from 'child_process';
+import {
+  mergeGitignore,
+  mergeGitignoreFromTemplate,
+  restrictCredentialFiles,
+  writeCredentialFile,
+  windowsCredentialNotice,
+} from './local-files.js';
 import { createInterface } from 'readline';
 
 async function prompt(question) {
@@ -76,6 +81,12 @@ program
           const rootSourcePath = join(sourcePath, rootItem);
           const rootTargetPath = join(rootDir, rootItem);
           try {
+            // Never overwrite the project's own ignore rules: merge the template's patterns into them
+            if (rootItem === '.gitignore' && existsSync(rootTargetPath)) {
+              mergeGitignoreFromTemplate(rootSourcePath, rootTargetPath);
+              console.log(`  ✓ Merged ${rootItem}`);
+              continue;
+            }
             if (statSync(rootSourcePath).isDirectory()) {
               cpSync(rootSourcePath, rootTargetPath, {
                 recursive: true,
@@ -143,16 +154,7 @@ program
 
     // Add .build-kit/ and .eventmodelers/ (local credentials) to project root .gitignore
     const gitignorePath = join(rootDir, '.gitignore');
-    for (const gitignoreEntry of ['.build-kit/', '.eventmodelers/']) {
-      if (existsSync(gitignorePath)) {
-        const content = readFileSync(gitignorePath, 'utf-8');
-        if (!content.split(/\r?\n/).some(line => line.trim() === gitignoreEntry)) {
-          appendFileSync(gitignorePath, `\n${gitignoreEntry}\n`);
-        }
-      } else {
-        writeFileSync(gitignorePath, `${gitignoreEntry}\n`);
-      }
-    }
+    mergeGitignore(gitignorePath, ['.build-kit/', '.eventmodelers/']);
 
     // P2: Create config file in project root (not just kit directory)
     // Config resolution: project root > kit directory > home directory
@@ -164,6 +166,10 @@ program
     const kitConfigDir = join(targetDir, '.eventmodelers');
     const kitConfigPath = join(kitConfigDir, 'config.json');
     mkdirSync(kitConfigDir, { recursive: true });
+
+    // Tighten permissions on every run so older installs with world-readable copies are fixed too
+    restrictCredentialFiles([rootConfigPath, kitConfigPath]);
+    windowsCredentialNotice();
 
     const hasExisting = await prompt('\nDo you have platform credentials from app.eventmodelers.ai/account? (y/n): ');
     if (hasExisting.toLowerCase() === 'y' || hasExisting.toLowerCase() === 'yes') {
@@ -192,13 +198,10 @@ program
       if (token)   config.token          = token;
 
       // Write to project root (P2: config location)
-      // Credentials are owner-readable only (best effort where the platform supports modes)
-      writeFileSync(rootConfigPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+      // Credentials are owner-readable only
+      writeCredentialFile(rootConfigPath, config);
       // Also copy to kit directory as optional override
-      writeFileSync(kitConfigPath, JSON.stringify(config, null, 2), { mode: 0o600 });
-      for (const path of [rootConfigPath, kitConfigPath]) {
-        try { chmodSync(path, 0o600); } catch { /* platform without POSIX modes */ }
-      }
+      writeCredentialFile(kitConfigPath, config);
       
       if (config.organizationId && config.boardId && config.token) {
         console.log(`\n  ✓ Credentials saved to .eventmodelers/config.json (project root)`);

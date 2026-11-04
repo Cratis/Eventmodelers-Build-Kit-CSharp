@@ -17,10 +17,14 @@ const inlineHeader = cfg.boardId
 
 function runClaude(prompt) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('claude', ['--dangerously-skip-permissions', '-p', inlineHeader + prompt], {
+    // The prompt (which carries the board token) goes through stdin, not argv, so `ps` cannot read it.
+    // `claude -p` reads its prompt from stdin when no prompt argument is given.
+    const proc = spawn('claude', ['--dangerously-skip-permissions', '-p'], {
       cwd: projectDir,
-      stdio: 'inherit',
+      stdio: ['pipe', 'inherit', 'inherit'],
     });
+    proc.stdin.on('error', () => {});
+    proc.stdin.end(inlineHeader + prompt);
     proc.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`Claude exited ${code}`))));
     proc.on('error', reject);
   });
