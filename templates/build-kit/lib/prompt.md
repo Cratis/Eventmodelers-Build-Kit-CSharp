@@ -66,7 +66,7 @@ This is the build trigger. Setting `InProgress` and building are one atomic step
    - Build: `dotnet build`  (zero warnings, zero errors)
    - Test (slice only): `dotnet test --filter "FullyQualifiedName~<SliceName>"`
 
-7. If checks pass, commit all changes with message: `feat: [Slice Name]`.
+7. If checks pass, Stage only the files that belong to this slice by explicit path (`git add <path> ...`) — never `git add -A`, `git add .` or `git commit -a`. Never stage `.eventmodelers/`, `.env*`, key files or credential files. Run `git status` and check the staged list before committing, then commit with message: `feat: [Slice Name]`.
 
 8. Call `/update-slice-status` to set the slice to `Done` on the board.
 

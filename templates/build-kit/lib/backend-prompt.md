@@ -60,7 +60,7 @@ implementing.
     - Test (slice only): `dotnet test --filter "FullyQualifiedName~<SliceName>"`
     If the slice is UI-triggered, also implement the React component(s) AFTER the build generated the
     proxies, then register them in the feature's composition page.
-14. If checks pass, commit ALL changes with message `feat: <Slice Name>` and merge back to `main` as a
+14. If checks pass, Stage only the files that belong to this slice by explicit path (`git add <path> ...`) — never `git add -A`, `git add .` or `git commit -a`. Never stage `.eventmodelers/`, `.env*`, key files or credential files. Run `git status` and check the staged list before committing, then commit with message `feat: <Slice Name>` and merge back to `main` as a
     fast-forward merge (update first).
 15. Set `status: Done` for the slice in `index.json` **and** on the board via `update-slice-status`.
 16. Append progress to `progress.txt` after each step.

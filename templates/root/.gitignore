@@ -57,6 +57,9 @@ dist/
 *.swo
 *~
 
+# Local Eventmodelers credentials
+.eventmodelers/
+
 # OS
 .DS_Store
 Thumbs.db

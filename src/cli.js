@@ -12,9 +12,16 @@ import {
   statSync,
   writeFileSync,
   readFileSync,
-  appendFileSync,
 } from 'fs';
 import { execSync } from 'child_process';
+import {
+  ensureCredentialIgnored,
+  mergeGitignore,
+  mergeGitignoreFromTemplate,
+  restrictCredentialFiles,
+  writeCredentialFile,
+  windowsCredentialNotice,
+} from './local-files.js';
 import { createInterface } from 'readline';
 
 async function prompt(question) {
@@ -75,6 +82,12 @@ program
           const rootSourcePath = join(sourcePath, rootItem);
           const rootTargetPath = join(rootDir, rootItem);
           try {
+            // Never overwrite the project's own ignore rules: merge the template's patterns into them
+            if (rootItem === '.gitignore' && existsSync(rootTargetPath)) {
+              mergeGitignoreFromTemplate(rootSourcePath, rootTargetPath);
+              console.log(`  ✓ Merged ${rootItem}`);
+              continue;
+            }
             if (statSync(rootSourcePath).isDirectory()) {
               cpSync(rootSourcePath, rootTargetPath, {
                 recursive: true,
@@ -140,17 +153,11 @@ program
       console.error('  ⚠️  npm install failed in .build-kit — run it manually');
     }
 
-    // Add .build-kit/ to project root .gitignore
+    // Add .build-kit/ and .eventmodelers/ (local credentials) to project root .gitignore
     const gitignorePath = join(rootDir, '.gitignore');
-    const gitignoreEntry = '.build-kit/';
-    if (existsSync(gitignorePath)) {
-      const content = readFileSync(gitignorePath, 'utf-8');
-      if (!content.includes(gitignoreEntry)) {
-        appendFileSync(gitignorePath, `\n${gitignoreEntry}\n`);
-      }
-    } else {
-      writeFileSync(gitignorePath, `${gitignoreEntry}\n`);
-    }
+    mergeGitignore(gitignorePath, ['.build-kit/', '.eventmodelers/']);
+    // A later negation can re-include the credentials, so confirm with git itself
+    ensureCredentialIgnored(gitignorePath);
 
     // P2: Create config file in project root (not just kit directory)
     // Config resolution: project root > kit directory > home directory
@@ -162,6 +169,10 @@ program
     const kitConfigDir = join(targetDir, '.eventmodelers');
     const kitConfigPath = join(kitConfigDir, 'config.json');
     mkdirSync(kitConfigDir, { recursive: true });
+
+    // Tighten permissions on every run so older installs with world-readable copies are fixed too
+    restrictCredentialFiles([rootConfigPath, kitConfigPath]);
+    windowsCredentialNotice();
 
     const hasExisting = await prompt('\nDo you have platform credentials from app.eventmodelers.ai/account? (y/n): ');
     if (hasExisting.toLowerCase() === 'y' || hasExisting.toLowerCase() === 'yes') {
@@ -190,9 +201,10 @@ program
       if (token)   config.token          = token;
 
       // Write to project root (P2: config location)
-      writeFileSync(rootConfigPath, JSON.stringify(config, null, 2));
+      // Credentials are owner-readable only
+      writeCredentialFile(rootConfigPath, config);
       // Also copy to kit directory as optional override
-      writeFileSync(kitConfigPath, JSON.stringify(config, null, 2));
+      writeCredentialFile(kitConfigPath, config);
       
       if (config.organizationId && config.boardId && config.token) {
         console.log(`\n  ✓ Credentials saved to .eventmodelers/config.json (project root)`);
