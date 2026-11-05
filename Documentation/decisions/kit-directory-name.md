@@ -1,6 +1,6 @@
 ---
 title: Kit Directory Name
-description: Decision to use .build-kit as the kit directory name
+description: Understand why the C# Eventmodelers Build Kit standardizes on .build-kit for runtime files, prompts and skills, matching the upstream platform contract.
 status: Accepted
 date: 2025-01-15
 deciders: Cratis Team

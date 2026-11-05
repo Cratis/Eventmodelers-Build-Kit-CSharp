@@ -1,6 +1,6 @@
 ---
 title: The Loop and Triggers
-description: How the Eventmodelers Build Kit - C# agent loop decides what to do next
+description: Understand the C# Eventmodelers Build Kit agent loop, its board and local triggers, slice-type routing and behavior when board credentials are absent.
 tableOfContents: false
 ---
 

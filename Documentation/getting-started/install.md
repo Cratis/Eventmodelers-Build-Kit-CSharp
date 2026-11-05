@@ -1,6 +1,6 @@
 ---
 title: Install the Kit
-description: Install the Eventmodelers Build Kit - C# into your project directory
+description: Install the C# Eventmodelers Build Kit, protect token files, configure board access and local services, then verify the starter app before running the loop.
 tableOfContents: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Run Your First Slice
-description: See a slice go from Planned to Done with the Eventmodelers Build Kit - C#
+description: Follow a C# Eventmodelers board slice from Planned to Done, inspect generated vertical-slice files and review the agent loop's build and test output.
 tableOfContents: false
 ---
 

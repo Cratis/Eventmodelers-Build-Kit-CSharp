@@ -1,6 +1,6 @@
 ---
 title: Connect a Board
-description: Set up Eventmodelers board credentials for the Build Kit - C#
+description: Connect the C# Build Kit to an Eventmodelers board with organization and board IDs, an API token and base URL, then verify or rotate stored credentials.
 tableOfContents: false
 ---
 
