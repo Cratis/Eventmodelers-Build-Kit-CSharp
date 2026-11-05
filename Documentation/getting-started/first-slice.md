@@ -6,27 +6,29 @@ tableOfContents: false
 
 # Run Your First Slice
 
-This walkthrough shows a slice going from `Planned` on your Eventmodelers board to a tested, working Cratis vertical slice in your .NET / C# project — with no manual coding in between.
+Follow one slice from `Planned` on your Eventmodelers board through the generated C# files, build and test results, and the final board status. Keep the loop output visible so you can check each result rather than treating a status change as a substitute for reviewing the implementation.
 
 ## Prerequisites
 
-[Install the kit](install.md) and [connect it to a board](../guides/connect-a-board.md) first. The loop needs a running agent (`node .build-kit/ralph-claude.js`) and valid credentials in `.eventmodelers/config.json`.
+[Install the kit](install.md) and [connect it to a board](../guides/connect-a-board.md) first, including the starter build tools and local installation checks. For board sync, the loop needs `organizationId`, `boardId`, `token`, and `baseUrl` in `.build-kit/.eventmodelers/config.json`. Start the loop below if it is not already running; do not start a second copy.
 
 ## Look at the example slice first
 
-Every install ships a working example under `SomeModule/SomeFeature/` — a `Registration` slice (a command and its event) and a `Listing` slice (a projection and read model). Open them before you build your own; they show every convention the kit's build skills reproduce:
+The starter includes examples under `SomeModule/SomeFeature/`: `Registration` contains a command, its event, and a reactor; `Listing` contains the read model. Open them before building your own slice so you have the installed C# shapes beside the generated files:
 
 - One file per slice, with the command/event/reactor together
-- `@Command`/`@EventType`-style artifacts with a `handle()`-shaped method that returns the event
+- `[Command]` and `[EventType]` artifacts, with `Handle()` on the command
 - The React screen and command wiring in `.tsx`/`.ts` files beside them
 
 ## Start the loop
+
+If the Claude loop is already running from installation, keep that terminal open and continue to the board step. Otherwise, run it from the project root in its own terminal. As described during installation, this launcher bypasses Claude permission prompts and its build instructions include Git commits and a merge back to `main`.
 
 ```bash
 node .build-kit/ralph-claude.js
 ```
 
-The loop polls for two independent triggers — see [Understanding the Loop](../understand/the-loop.md) — and idles quietly until one fires.
+The loop checks two independent triggers — see [Understanding the Loop](../understand/the-loop.md). Before marking the slice, check its startup output: local-only mode means board sync is disabled. Check the kit-local config and its four required values if that is not the mode you intended.
 
 ## 1. Mark a slice `Planned` on your board
 
@@ -47,11 +49,11 @@ On [app.eventmodelers.ai](https://app.eventmodelers.ai), create or open a slice 
 
 ## 2. The kit fetches and persists the slice
 
-The real-time subscription picks up the status change and saves the definition to `.build-kit/.slices/Authors/register-author/slice.json`.
+Watch the terminal for the board change and persistence output, then inspect the saved definition. For the example above, the context and title become `.build-kit/.slices/authors/registerauthor/slice.json`. Check that it describes the slice you selected before reviewing generated code.
 
 ## 3. The kit generates the vertical slice
 
-Because the slice only carries `commands`/`events` (no `processors`, no `projections`/`queries`), the loop routes to the `build-state-change` skill, which generates `Authors/Registration/RegisterAuthor.cs`:
+For a definition carrying only `commands`/`events` (no `processors`, no `projections`/`queries`), the build instructions select `build-state-change`. Review the generated command and event against the saved definition and the installed C# example. The following excerpt illustrates the command/event shape; it is not a complete application:
 
 ```cs
 [Command]
@@ -68,6 +70,8 @@ public record AuthorRegistered(AuthorId Id, AuthorName Name);
 
 ## 4. The kit builds and tests the slice
 
+Inspect the loop output for the build and slice-specific test results. The commands below illustrate the walkthrough’s project names; they are not projects supplied by the starter. The agent’s instructions build from the actual project root and filter tests to the slice.
+
 ```bash
 dotnet build Authors.Registration
 dotnet test Authors.Registration.Specs
@@ -75,10 +79,10 @@ dotnet test Authors.Registration.Specs
 
 ## 5. The kit updates the board to `Done`
 
-Once the build and tests pass, the kit calls back to the platform and marks the slice `Done` — closing the loop without you touching an editor.
+The build instructions tell the agent to mark the slice `Done` after the checks pass. Check the board status alongside the successful build and test output, then review the generated files against the slice definition. A `Done` label alone does not show you what was implemented.
 
 ## What's next
 
 - Try a slice with `projections`/`readModel` set — it routes to `build-state-view` instead
 - Try a slice with `processors` set — it routes to `build-automation`
-- If a slice gets stuck in `InProgress`, check the loop's terminal output, confirm `dotnet build` succeeds locally, then re-run the loop
+- If a slice gets stuck in `InProgress`, check the loop's terminal output and confirm `dotnet build` succeeds locally. The build trigger selects only `Planned` slices, and the task instructions skip `InProgress`; re-running the loop alone does not make that slice eligible again.

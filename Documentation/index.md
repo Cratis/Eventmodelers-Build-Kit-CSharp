@@ -22,7 +22,7 @@ The entire process happens automatically, with your Claude agent implementing th
 
 ## Where to Start
 
-- **[Install the Kit](getting-started/install.md)** — Get up and running in five minutes
+- **[Install the Kit](getting-started/install.md)** — Prepare the starter, credentials, and local services before starting the loop
 - **[Run Your First Slice](getting-started/first-slice.md)** — Watch a slice go from `Planned` to `Done`
 - **[Connect a Board](guides/connect-a-board.md)** — Wire the kit up to your Eventmodelers board
 
@@ -60,23 +60,7 @@ See the sibling kits for other language implementations: [Kotlin](https://github
 
 ## Installation
 
-Install from git (this package is private, so use the git install path):
-
-```bash
-npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
-```
-
-Or use the upstream CLI with this repository as a git stack:
-
-```bash
-npx @eventmodelers/cli init --stack cratis-csharp --git https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp
-```
-
-After installation, run:
-
-```bash
-node .build-kit/ralph-claude.js
-```
+Follow [Install the Kit](getting-started/install.md) for the complete setup and launch procedure. It covers fresh directories and existing repositories, both credential-entry paths, token-file protection, and local service checks before you start the Claude loop. Use that procedure rather than launching the loop immediately after installation.
 
 ## Next Steps
 
