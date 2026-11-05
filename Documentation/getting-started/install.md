@@ -30,7 +30,7 @@ The empty initial commit establishes `main` without staging any files. For an ex
 
 ## Installation
 
-Use a fresh project directory for the kit. The installer overwrites same-name files in the project root, including `package.json` and `Program.cs`, on **every run**. An existing `.gitignore` is the exception: the installer merges the template's patterns into it and keeps your own rules. Before installing into an existing repository, commit or back up your work and check for conflicting files in the starter templates.
+Use a fresh project directory for the kit. The installer overwrites same-name files in the project root, including `package.json` and `Program.cs`, on **every run**. The installer keeps existing `.gitignore` rules and merges in the template's patterns. Before installing into an existing repository, commit or back up your work and check for conflicting files in the starter templates.
 
 From your intended project root, install directly from this repository:
 
@@ -38,7 +38,7 @@ From your intended project root, install directly from this repository:
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
 ```
 
-The installer copies the C# starter and React frontend into your project root, copies the loop and skills into `.build-kit/`, runs `npm install` inside `.build-kit/`, and adds `.build-kit/` and `.eventmodelers/` to the root `.gitignore` (creating it if needed, otherwise appending only missing lines). It then asks for credentials. Check its output for copy or dependency-install failures; resolve them before continuing. The application’s root Node.js dependencies are installed later in this procedure.
+The installer copies the C# starter and React frontend into your project root, copies the loop and skills into `.build-kit/`, runs `npm install` inside `.build-kit/`, and merges `.build-kit/` and `.eventmodelers/` into the root `.gitignore`. It creates the file if needed and re-appends rules when later negations could undo them. It then asks for credentials. Check its output for copy or dependency-install failures; resolve them before continuing. The application’s root Node.js dependencies are installed later in this procedure.
 
 ## During Installation
 
@@ -60,7 +60,7 @@ The installer already ignores `.eventmodelers/`. Before manually pasting credent
 /.eventmodelers/config.json
 ```
 
-The root config contains your token. The installer adds `.build-kit/` and `.eventmodelers/` to `.gitignore`, then asks git whether `.eventmodelers/config.json` is ignored; if a later negation such as `!.eventmodelers/` re-includes it, the installer appends `.eventmodelers/` as the last line, and prints a warning if the file is still exposed. Reruns merge rather than overwrite, so your own rules are kept. Outside a git repository the git check is skipped, so run the check below once the repository exists.
+The root config contains your token. The installer adds ignore rules for `.build-kit/` and `.eventmodelers/`. In a Git repository, it checks whether `.eventmodelers/config.json` is ignored. If not, it appends `.eventmodelers/` as the last rule and checks again. It warns if the file is still exposed. Reruns keep your existing rules. Outside a Git repository, this check is skipped. Run the check below once the repository exists.
 
 From the project root, check both paths:
 
@@ -107,14 +107,14 @@ This reports local files and saved settings, not whether the server accepts your
 
 ### Bind local services before starting Compose
 
-Edit the project-root `docker-compose.yml` before running Compose. The template publishes ports on all interfaces and enables anonymous access to Aspire Dashboard. For local development only, bind **every** port mapping under both services to `127.0.0.1`:
+Check the project-root `docker-compose.yml` before running Compose. The template binds every published port to `127.0.0.1` and enables anonymous access to Aspire Dashboard. Keep these loopback bindings for local development:
 
 | Service | Loopback-bound port mappings |
 |---|---|
 | `chronicle` | `"127.0.0.1:27017:27017"`, `"127.0.0.1:8080:8080"`, `"127.0.0.1:11111:11111"`, `"127.0.0.1:30000:30000"`, `"127.0.0.1:35000:35000"` |
 | `aspire-dashboard` | `"127.0.0.1:18888:18888"`, `"127.0.0.1:4317:18889"` |
 
-Replace the existing entries under each service’s `ports` list with these values. Loopback binding limits access to your machine; it does not add dashboard authentication. This setup is for local development, not deployment.
+If your installed file uses different bindings, update its `ports` lists to match. Loopback binding limits access to your machine. It does not add dashboard authentication. This setup is for local development, not deployment.
 
 ### Build and run the starter
 

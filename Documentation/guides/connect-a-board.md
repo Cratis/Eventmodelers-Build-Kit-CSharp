@@ -53,7 +53,7 @@ The loop requires `organizationId`, `boardId`, `token`, and `baseUrl`; missing v
 
 After installation or `/connect`, follow [Complete both config files for every path](../getting-started/install.md#complete-both-config-files-for-every-path), including the copy step and MCP URL check. Use `organizationId` in both files, as shown there.
 
-The installer merges `.build-kit/` and `.eventmodelers/` into `.gitignore` and verifies with git that the root token file is ignored. Follow [Protect the token files after each installer run](../getting-started/install.md#protect-the-token-files-after-each-installer-run) and confirm that the ignore check prints both paths before committing or launching the agent.
+The installer keeps existing `.gitignore` rules and merges in `.build-kit/` and `.eventmodelers/`. In a Git repository, it checks that the root token file is ignored and appends `.eventmodelers/` again if needed. It warns if the file is still exposed. Follow [Protect the token files after each installer run](../getting-started/install.md#protect-the-token-files-after-each-installer-run) and confirm that the ignore check prints both paths before committing or launching the agent.
 
 ## Verify the connection
 
