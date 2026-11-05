@@ -6,7 +6,7 @@ tableOfContents: false
 
 # Connect a Board
 
-The kit needs three values to talk to your Eventmodelers board: an **organization ID**, a **board ID**, and an API **token**. This guide covers getting them, where they're stored, and how to change them later.
+The kit needs an **organization ID**, a **board ID**, an API **token**, and an explicit **base URL** for board sync. This guide covers getting the credentials, where they're stored, and how to change them later.
 
 ## Get your credentials
 
@@ -34,34 +34,26 @@ If you skipped credentials at install time, or need to change them later, use `/
 
 1. Checks for inline overrides (`board=<uuid>`, `token=<uuid>`, `org=<uuid>`, `baseUrl=<url>`) in the prompt that invoked it
 2. Falls back to `.eventmodelers/config.json` for any value not overridden
-3. Asks you for anything still missing, one field at a time
-4. Writes the resolved config back to disk
+3. Asks for missing credentials and uses `https://api.eventmodelers.ai` when `baseUrl` is missing
+4. When it had to ask for missing values, writes them to `.eventmodelers/config.json` in the current working directory. If every value was already available (for example a complete config plus an inline `board=` override), it skips this step, so an inline override is not saved
 
-Every other skill in the kit (`build-state-change`, `build-state-view`, `build-automation`, `load-slice`, `update-slice-status`) calls `connect` first, so you never have to wire credentials into each one individually.
+The `load-slice` and `update-slice-status` skills call `connect` first, so you don't have to wire credentials into them individually. The `build-state-change`, `build-state-view` and `build-automation` skills start with convention discovery and don't call `connect` themselves.
 
 ## Where credentials live
 
-The installer writes the same config to two places:
+The installer, skills, and loop read configuration differently:
 
-| Location | Purpose |
+| Reader | Configuration source |
 |---|---|
-| `.eventmodelers/config.json` (project root) | The primary config, checked first |
-| `.build-kit/.eventmodelers/config.json` (kit directory) | An optional override, checked second |
+| Installer | Reads `.eventmodelers/config.json` in the project root after you answer **no** to the existing-credentials question. If any of the three credential fields is missing, it prompts and writes both config files; otherwise, it skips both writes. |
+| `/connect` skill | Uses **inline parameter > `.eventmodelers/config.json` in the current working directory > ask for missing credentials**, with the skill's default for `baseUrl`. It does not search both config locations. |
+| Loop | Reads **only** `.build-kit/.eventmodelers/config.json`. A nonempty `BASE_URL` environment variable overrides that file's `baseUrl`; there is no root-config fallback or default API URL. |
 
-Resolution order is **inline parameter > project-root config > kit-directory config > ask the user**. Both files are excluded from version control automatically.
+The loop requires `organizationId`, `boardId`, `token`, and `baseUrl`; missing values select local-only mode instead of board sync. The installer's hosted-URL fallback configures MCP only; it does not fill in `baseUrl` in either config file.
 
-The config shape is:
+After installation or `/connect`, follow [Complete both config files for every path](../getting-started/install.md#complete-both-config-files-for-every-path), including the copy step and MCP URL check. Use `organizationId` in both files, as shown there.
 
-```json
-{
-  "organizationId": "<uuid>",
-  "boardId": "<uuid>",
-  "token": "<uuid>",
-  "baseUrl": "https://api.eventmodelers.ai"
-}
-```
-
-`baseUrl` defaults to `https://api.eventmodelers.ai` and only needs to be set explicitly when pointing at a self-hosted or local instance.
+The installer ignores `.build-kit/`, but does **not** ignore the root token file. Follow [Protect the token files after each installer run](../getting-started/install.md#protect-the-token-files-after-each-installer-run) and confirm that the ignore check prints both paths before committing or launching the agent.
 
 ## Verify the connection
 
@@ -69,7 +61,7 @@ The config shape is:
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp status
 ```
 
-A working connection prints the organization and board the kit is currently pointed at:
+Run this from the project root. It checks whether the kit, skills, and both config files exist, then prints saved values from the **root config only**. For example:
 
 ```
 Connected to: https://api.eventmodelers.ai
@@ -77,15 +69,17 @@ Organization: <your-org-id>
 Board:        <your-board-id>
 ```
 
+Despite the `Connected to:` label, `status` makes no server request and does not verify credentials or inspect the kit-local config's values. Follow [Start the Claude loop](../getting-started/install.md#start-the-claude-loop) to check board-sync startup and watch for platform errors.
+
 ## Rotate or change credentials
 
-Run `/connect` again with an inline override to switch boards without editing files by hand:
+Use `/connect` with an inline override to change the board for the skill session:
 
 ```
 /connect board=<new-board-uuid>
 ```
 
-Or edit `.eventmodelers/config.json` directly and restart the loop.
+Rotating credentials or changing boards requires updating **both** `.eventmodelers/config.json` and `.build-kit/.eventmodelers/config.json`. `/connect` does not synchronize the two files. Edit both, or complete the root config and repeat the [config copy step and MCP URL check](../getting-started/install.md#complete-both-config-files-for-every-path). Repeat the [token-file ignore check](../getting-started/install.md#protect-the-token-files-after-each-installer-run), then restart the loop.
 
 ## See Also
 

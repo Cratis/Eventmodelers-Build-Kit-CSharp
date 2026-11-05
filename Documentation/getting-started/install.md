@@ -6,21 +6,31 @@ tableOfContents: false
 
 # Install the Kit
 
-Install the Eventmodelers Build Kit - C# in the project directory where you want the starter app and generated slices. You will check the installed files and settings before starting the loop, then follow one slice through the build.
+Install the Eventmodelers Build Kit - C# in the project directory where you want the starter app and generated slices. This procedure checks the installed files, credentials, and local services before you start the Claude loop and follow your first board slice through the build.
 
 ## Prerequisites
 
 Before installing, choose the project directory the kit should write into and make sure you have:
 
 - **Node.js 18+** installed ([Download](https://nodejs.org/))
-- **Claude Code** or another Claude-compatible agent ([Get Claude](https://claude.ai))
+- **Claude Code** installed with `claude` on your `PATH` for this walkthrough ([Get Claude](https://claude.ai))
+- **Git** installed with your commit author identity configured, and a project repository with an initial commit on `main`
 - **Eventmodelers account** with at least one board ([Sign up](https://app.eventmodelers.ai/account))
 
-To build and run the C# starter below, also install the .NET 10 SDK and Docker with Compose support. The starter targets .NET 10; its Compose file supplies the Chronicle development kernel and Aspire Dashboard.
+To build and run the C# starter below, also install the .NET 10 SDK and Docker with Compose v2 support (`docker compose`). The starter targets .NET 10; its Compose file supplies the Chronicle development kernel and Aspire Dashboard.
+
+The installer does not initialize a Git repository or create `main`. In a fresh project directory, run these commands before installing:
+
+```bash
+GIT_OPTIONAL_LOCKS=0 git --no-optional-locks -c core.fsmonitor=false init -b main
+GIT_OPTIONAL_LOCKS=0 git --no-optional-locks -c core.fsmonitor=false commit --allow-empty -m "Initialize project"
+```
+
+The empty initial commit establishes `main` without staging any files. For an existing repository, make sure `main` already has a commit instead of reinitializing it.
 
 ## Installation
 
-### Option 1: Direct Git Install (Recommended)
+Use a fresh project directory for the kit. The installer overwrites same-name files in the project root, including `package.json`, `Program.cs`, and `.gitignore`, on **every run**. Before installing into an existing repository, commit or back up your work, check for conflicting files in the starter templates, and keep a copy of the ignore rules you need to preserve.
 
 From your intended project root, install directly from this repository:
 
@@ -28,81 +38,120 @@ From your intended project root, install directly from this repository:
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
 ```
 
-The installer performs these setup steps; check its output for copy or dependency-install failures before continuing:
-
-1. Copy the **Cratis starter app** (C# backend with Arc + Chronicle, an example slice, and the shared React frontend) into your project root
-2. Create a `.build-kit/` directory with the agent loop and skills
-3. Install Node.js dependencies for the loop
-4. Add `.build-kit/` to your `.gitignore`
-5. Create `.eventmodelers/config.json` in your project root
-6. Configure the MCP server in `.build-kit/.claude/settings.json`
-
-### Option 2: Upstream CLI with Git Stack
-
-If you already use the upstream Eventmodelers CLI to manage stacks, use this alternative instead of running both installation commands:
-
-```bash
-npx @eventmodelers/cli init --stack cratis-csharp --git https://github.com/Cratis/Eventmodelers-Build-Kit-CSharp
-```
-
-This selects the C# repository through the upstream CLI's stack management. The checks and first-slice walkthrough below concern the installed C# kit, not the sibling language kits.
+The installer copies the C# starter and React frontend into your project root, copies the loop and skills into `.build-kit/`, runs `npm install` inside `.build-kit/`, and adds `.build-kit/` to the root `.gitignore`. It then asks for credentials. Check its output for copy or dependency-install failures; resolve them before continuing. The application’s root Node.js dependencies are installed later in this procedure.
 
 ## During Installation
 
-The installer first asks whether you already have platform credentials. If you answer yes, it prints the project-root config path and exits so you can paste the config there and re-run the installer. Otherwise, when required values are missing, it prompts for them:
+The first prompt is `Do you have platform credentials from app.eventmodelers.ai/account? (y/n):`. Choose the row that matches your starting point:
 
+| Starting point | What to do |
+|---|---|
+| Fresh directory, entering new credentials | Answer **no** (`n`), then enter **Organization ID**, **Board ID**, and **Token** from [your account](https://app.eventmodelers.ai/account). The installer writes both config files, but does not add `baseUrl`. Complete them below. |
+| Fresh directory, pasting an existing account config | Answer **yes** (`y`). The installer prints the project-root config path and exits. Apply the token-file protection below, paste your account config into `.eventmodelers/config.json`, then rerun the same install command. On the rerun, answer **no** (`n`) so it reads the saved config and configures MCP. If the three credential fields are complete, it skips **both** config writes: you must create the kit-local copy below yourself. |
+| Existing repository | Use the same credential choices above. If a root config is already present, answer **no** (`n`) to read it; missing credentials prompt for input. Reapply your preserved ignore rules after the final installer run, and complete both config files below. |
+
+Answering yes always exits before reading the saved config or configuring MCP. When prompted for individual fields, Enter leaves an existing value unchanged or skips a missing one. You can connect later, but complete all four fields below before following this board-driven walkthrough.
+
+### Protect the token files after each installer run
+
+Before manually pasting credentials or committing installed files, add this line to the project-root `.gitignore`:
+
+```gitignore
+/.eventmodelers/config.json
 ```
-🔑 Enter your Eventmodelers credentials (press Enter to skip any field):
 
-  Organization ID:
-  Board ID:
-  Token:
+The root config contains your token. The installer adds `.build-kit/`, which covers the kit-local copy, but does not ignore the root config. A rerun overwrites `.gitignore`, so **repeat this protection after the final run**, including any ignore rules you preserved from an existing repository.
+
+From the project root, check both paths:
+
+```bash
+GIT_OPTIONAL_LOCKS=0 git --no-optional-locks -c core.fsmonitor=false check-ignore .eventmodelers/config.json .build-kit/.eventmodelers/config.json
 ```
 
-Get these from [app.eventmodelers.ai/account](https://app.eventmodelers.ai/account). You can skip any
-field and configure it later — see [Connect a Board](../guides/connect-a-board.md).
+The command must print both paths before you proceed. An ignore rule does not protect an already tracked file; if either path is missing from the output, resolve that before committing or launching the agent.
+
+### Complete both config files for every path
+
+After the final installer run, edit `.eventmodelers/config.json` in the project root so it contains all four fields. Replace the placeholder values with your own credentials; the hosted API URL is shown below:
+
+```json
+{
+  "organizationId": "<your-org-id>",
+  "boardId": "<your-board-id>",
+  "token": "<your-token>",
+  "baseUrl": "https://api.eventmodelers.ai"
+}
+```
+
+Then copy that complete config into the kit-local path, even if the installer already created a copy:
+
+```bash
+cp .eventmodelers/config.json .build-kit/.eventmodelers/config.json
+```
+
+The installer creates both parent directories. The loop reads **only** `.build-kit/.eventmodelers/config.json` and requires `organizationId`, `boardId`, `token`, and `baseUrl` there for board sync. It does not fall back to the root config or supply a default API URL. Missing values select local-only mode, not board sync.
+
+Check that `.build-kit/.claude/settings.json` contains `mcpServers.eventmodelers` with `type: "http"` and a `url` matching your `baseUrl` followed by `/mcp`. If your account config uses a different API URL, keep it consistent in both config files and this MCP setting. Repeat the ignore check above after the final run, and keep both config copies in sync when you change boards or credentials.
 
 ## After Installation
 
-From the project root, check what the installer created before starting a long-running process:
+### Check the local installation
+
+From the project root, check what the installer created:
 
 ```bash
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp status
 ```
 
-This command reports local files and saved settings, not whether the server accepts your credentials. With the installation and configuration present, its output has this shape:
+This reports local files and saved settings, not whether the server accepts your credentials. Check that the kit, skills, and both config files are present, and that the reported organization and board are the ones you intend to use. Inspect the kit-local config too: `status` reports credential values from the root file only.
 
-```
-.build-kit Status
+### Bind local services before starting Compose
 
-Kit dir:        ✅ installed
-Skills:         ✅ installed
-Config (root):  ✅ present
-Config (kit):   ✅ present
+Edit the project-root `docker-compose.yml` before running Compose. The template publishes ports on all interfaces and enables anonymous access to Aspire Dashboard. For local development only, bind **every** port mapping under both services to `127.0.0.1`:
 
-Connected to: https://api.eventmodelers.ai
-Organization: <your-org-id>
-Board:        <your-board-id>
-```
+| Service | Loopback-bound port mappings |
+|---|---|
+| `chronicle` | `"127.0.0.1:27017:27017"`, `"127.0.0.1:8080:8080"`, `"127.0.0.1:11111:11111"`, `"127.0.0.1:30000:30000"`, `"127.0.0.1:35000:35000"` |
+| `aspire-dashboard` | `"127.0.0.1:18888:18888"`, `"127.0.0.1:4317:18889"` |
 
-If credentials were skipped or the saved board is not the one you intend to use, finish [Connect a Board](../guides/connect-a-board.md) before starting the board-driven walkthrough. The loop reads `.build-kit/.eventmodelers/config.json`; board sync requires `organizationId`, `boardId`, `token`, and `baseUrl` there. Check that copy as well as the project-root file.
+Replace the existing entries under each service’s `ports` list with these values. Loopback binding limits access to your machine; it does not add dashboard authentication. This setup is for local development, not deployment.
 
-Build and run the starter app from the project root. Run the Compose and build commands first. Keep the backend running in one terminal and run the frontend command in another; the foreground backend process does not return you to a prompt for the next line:
+### Build and run the starter
+
+From the project root, start the development services and build the backend:
 
 ```bash
-docker-compose up -d           # Chronicle development kernel + Aspire Dashboard
-dotnet build                   # backend
-dotnet run                     # run the backend (http://localhost:5000)
-npm install && npm run dev     # frontend dev server (http://localhost:5173)
+docker compose up -d
+dotnet build
 ```
 
-When you are ready to let the agent work in this project, start the Claude loop in a separate terminal and leave its output visible. The launcher uses `--dangerously-skip-permissions`, and the build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify:
+Resolve any failures before continuing. In one terminal, keep the backend running at the address used by the frontend proxy:
+
+```bash
+dotnet run --urls http://localhost:5000
+```
+
+In another terminal, also from the project root, install the frontend dependencies and start its development server:
+
+```bash
+npm install && npm run dev
+```
+
+Open `http://localhost:9000` to check the starter app before launching the agent. Keep the backend and frontend terminals running.
+
+### Start the Claude loop
+
+Review the installed changes before giving the agent control of the project. The launcher uses `--dangerously-skip-permissions`, and the build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify. A board that already has `Planned` slices can trigger work as soon as the loop starts.
+
+Start one Claude loop in a separate terminal from the project root and leave its output visible:
 
 ```bash
 node .build-kit/ralph-claude.js
 ```
 
-The local Ollama launcher is an optional alternative, not an additional process to run alongside Claude. Start `ollama serve` first. This walkthrough follows the Claude launcher; do not assume the two launchers provide identical trigger behavior:
+Check the startup output for your organization, board, and API URL. If it says `mode: local-only (no platform sync)`, stop the loop, complete the four fields in the kit-local config, and restart it. Local file checks alone do not verify the connection; watch for platform errors and board subscription output before continuing to the first slice.
+
+The local Ollama launcher is a separate alternative, not an additional process to run alongside Claude. Start `ollama serve` first. This walkthrough follows Claude; the Ollama launcher does not register the same planned-slice callback:
 
 ```bash
 OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js
@@ -110,11 +159,7 @@ OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js
 
 ## Next Steps
 
-With the local files checked, continue through these steps in order. If the loop is already running, leave it running for the first-slice walkthrough:
-
-1. [Connect your Eventmodelers board](../guides/connect-a-board.md)
-2. [Mark a slice as `Planned`](https://app.eventmodelers.ai) on your board
-3. [Run the kit](first-slice.md) to implement the slice
+With the installation checks complete and one Claude loop running, continue to [Run Your First Slice](first-slice.md) to mark a board slice `Planned` and review its implementation. For credential changes, see [Connect a Board](../guides/connect-a-board.md), then repeat the two-file configuration and ignore checks above before restarting the loop.
 
 ## Troubleshooting
 
@@ -129,19 +174,19 @@ If installation fails:
 
 ### Config Not Found
 
-If the kit can't find your config:
+If the loop cannot find your config or starts in local-only mode:
 
-1. Verify `.eventmodelers/config.json` exists in your project root
-2. Check that the JSON is valid: `cat .eventmodelers/config.json | jq .`
-3. Ensure your credentials are correct: [app.eventmodelers.ai/account](https://app.eventmodelers.ai/account)
+1. Verify `.build-kit/.eventmodelers/config.json` exists and contains valid JSON
+2. Check that `organizationId`, `boardId`, `token`, and `baseUrl` are all present and nonempty; a complete root config alone is not enough
+3. Confirm the credentials match your intended board at [app.eventmodelers.ai/account](https://app.eventmodelers.ai/account), then restart the loop
 
 ### MCP Server Not Configured
 
 If MCP server configuration fails:
 
-1. Check that `.build-kit/.claude/settings.json` exists
-2. Verify the `mcpServers.eventmodelers` entry is present
-3. Restart Claude Code after installation
+1. Check that `.build-kit/.claude/settings.json` exists; after pasting a root config, rerun the installer and answer **no** to the credentials question
+2. Verify the `mcpServers.eventmodelers` entry is present and its URL matches your config’s `baseUrl` followed by `/mcp`
+3. Reapply the token-file ignore rules and checks after any rerun, then restart Claude Code
 
 ## See Also
 
