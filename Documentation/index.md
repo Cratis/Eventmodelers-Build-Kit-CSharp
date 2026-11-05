@@ -1,6 +1,6 @@
 ---
 title: Eventmodelers Build Kit - C#
-description: Real-time Claude agent that connects to the Eventmodelers Platform and implements board slices as Cratis (Arc + Chronicle) vertical slices in a .NET / C# project
+description: Use the C# Eventmodelers Build Kit to connect a board to a Claude agent loop that implements slices as Cratis Arc and Chronicle features in a .NET project.
 tableOfContents: false
 ---
 

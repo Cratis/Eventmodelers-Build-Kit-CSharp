@@ -1,6 +1,6 @@
 ---
 title: CLI Commands
-description: Command reference for the Eventmodelers Build Kit - C# installer CLI
+description: Reference C# Eventmodelers Build Kit installer commands for install, uninstall and status, and distinguish directory management from running the agent loop.
 tableOfContents: false
 ---
 

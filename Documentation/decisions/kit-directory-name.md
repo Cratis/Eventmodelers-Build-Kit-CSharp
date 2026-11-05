@@ -1,6 +1,6 @@
 ---
 title: Kit Directory Name
-description: Why the C# build kit standardizes on .build-kit for runtime files, prompts, and skills so the Eventmodelers CLI can find installed kits.
+description: Understand why the C# Eventmodelers Build Kit standardizes on .build-kit for runtime files, prompts and skills, matching the upstream platform contract.
 status: Accepted
 date: 2025-01-15
 deciders: Cratis Team
