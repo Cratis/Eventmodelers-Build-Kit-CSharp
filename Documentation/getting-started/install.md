@@ -30,7 +30,7 @@ The empty initial commit establishes `main` without staging any files. For an ex
 
 ## Installation
 
-Use a fresh project directory for the kit. The installer overwrites same-name files in the project root, including `package.json`, `Program.cs`, and `.gitignore`, on **every run**. Before installing into an existing repository, commit or back up your work, check for conflicting files in the starter templates, and keep a copy of the ignore rules you need to preserve.
+Use a fresh project directory for the kit. The installer overwrites same-name files in the project root, including `package.json` and `Program.cs`, on **every run**. An existing `.gitignore` is the exception: the installer merges the template's patterns into it and keeps your own rules. Before installing into an existing repository, commit or back up your work and check for conflicting files in the starter templates.
 
 From your intended project root, install directly from this repository:
 
@@ -38,7 +38,7 @@ From your intended project root, install directly from this repository:
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
 ```
 
-The installer copies the C# starter and React frontend into your project root, copies the loop and skills into `.build-kit/`, runs `npm install` inside `.build-kit/`, and adds `.build-kit/` to the root `.gitignore`. It then asks for credentials. Check its output for copy or dependency-install failures; resolve them before continuing. The application’s root Node.js dependencies are installed later in this procedure.
+The installer copies the C# starter and React frontend into your project root, copies the loop and skills into `.build-kit/`, runs `npm install` inside `.build-kit/`, and adds `.build-kit/` and `.eventmodelers/` to the root `.gitignore` (creating it if needed, otherwise appending only missing lines). It then asks for credentials. Check its output for copy or dependency-install failures; resolve them before continuing. The application’s root Node.js dependencies are installed later in this procedure.
 
 ## During Installation
 
@@ -48,19 +48,19 @@ The first prompt is `Do you have platform credentials from app.eventmodelers.ai/
 |---|---|
 | Fresh directory, entering new credentials | Answer **no** (`n`), then enter **Organization ID**, **Board ID**, and **Token** from [your account](https://app.eventmodelers.ai/account). The installer writes both config files, but does not add `baseUrl`. Complete them below. |
 | Fresh directory, pasting an existing account config | Answer **yes** (`y`). The installer prints the project-root config path and exits. Apply the token-file protection below, paste your account config into `.eventmodelers/config.json`, then rerun the same install command. On the rerun, answer **no** (`n`) so it reads the saved config and configures MCP. If the three credential fields are complete, it skips **both** config writes: you must create the kit-local copy below yourself. |
-| Existing repository | Use the same credential choices above. If a root config is already present, answer **no** (`n`) to read it; missing credentials prompt for input. Reapply your preserved ignore rules after the final installer run, and complete both config files below. |
+| Existing repository | Use the same credential choices above. If a root config is already present, answer **no** (`n`) to read it; missing credentials prompt for input. Your existing ignore rules are kept, so just run the ignore check below, and complete both config files below. |
 
 Answering yes always exits before reading the saved config or configuring MCP. When prompted for individual fields, Enter leaves an existing value unchanged or skips a missing one. You can connect later, but complete all four fields below before following this board-driven walkthrough.
 
 ### Protect the token files after each installer run
 
-Before manually pasting credentials or committing installed files, add this line to the project-root `.gitignore`:
+The installer already ignores `.eventmodelers/`. Before manually pasting credentials or committing installed files, confirm the protection; if the check below does not print both paths, add this line to the project-root `.gitignore`:
 
 ```gitignore
 /.eventmodelers/config.json
 ```
 
-The root config contains your token. The installer adds `.build-kit/`, which covers the kit-local copy, but does not ignore the root config. A rerun overwrites `.gitignore`, so **repeat this protection after the final run**, including any ignore rules you preserved from an existing repository.
+The root config contains your token. The installer adds `.build-kit/` and `.eventmodelers/` to `.gitignore`, then asks git whether `.eventmodelers/config.json` is ignored; if a later negation such as `!.eventmodelers/` re-includes it, the installer appends `.eventmodelers/` as the last line, and prints a warning if the file is still exposed. Reruns merge rather than overwrite, so your own rules are kept. Outside a git repository the git check is skipped, so run the check below once the repository exists.
 
 From the project root, check both paths:
 
