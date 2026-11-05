@@ -12,7 +12,7 @@ The kit ships a small installer CLI (`src/cli.js`, invoked via `npx github:Crati
 |---|---|
 | `install` | Install `.build-kit` into the current directory |
 | `uninstall` | Remove `.build-kit` from the current directory |
-| `status` | Check installation and connection status |
+| `status` | Check installation files and saved settings |
 
 ## `install`
 
@@ -43,7 +43,7 @@ Removes the `.build-kit/` directory. It does **not** remove the starter app file
 npx github:Cratis/Eventmodelers-Build-Kit-CSharp status
 ```
 
-Reports whether the kit directory, skills, and both config files are present, and — when `.eventmodelers/config.json` is valid — which organization and board it's connected to:
+Reports whether the kit directory, skills, and both config files are present. When `.eventmodelers/config.json` at the project root is valid JSON, it displays the saved URL, organization, and board below. This does not test board access or inspect the values in the loop's kit-directory config:
 
 ```
 .build-kit Status
@@ -58,7 +58,7 @@ Organization: <your-org-id>
 Board:        <your-board-id>
 ```
 
-If `.eventmodelers/config.json` exists but isn't valid JSON, `status` reports `⚠️  Config file is invalid JSON` instead of the connection details.
+If `.eventmodelers/config.json` exists but isn't valid JSON, `status` reports `⚠️  Config file is invalid JSON` instead of the configured values. For the skill's board access check and consumer-specific configuration guidance, follow [Connect a Board](../guides/connect-a-board.md).
 
 ## Running the loop
 
@@ -70,7 +70,7 @@ These aren't CLI subcommands — they're the scripts `install` copies into `.bui
 | `OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js` | Run the loop with a local Ollama model (`ollama serve` must be running) |
 | `node .build-kit/ralph-claude.js /path/to/project` | Point the loop at a project directory other than the kit's parent |
 
-See [Understanding the Loop](../understand/the-loop.md) for what happens once the loop is running.
+For a first run, follow [Run Your First Slice](../getting-started/first-slice.md). See [Understanding the Loop](../understand/the-loop.md) for how the running loop selects work.
 
 ## See Also
 
