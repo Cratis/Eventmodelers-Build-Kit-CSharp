@@ -71,7 +71,7 @@ node -e "const c=require('./.eventmodelers/config.json'); console.log(JSON.strin
 This prints the config with the token masked. If the file exists and is valid JSON, extract any values **not already set by Step 0**:
 - `token` → present or missing (the value stays in the file)
 - `boardId` → `BOARD_ID`
-- `organizationId` → `ORG_ID`
+- `organizationId` → `ORG_ID` (read `orgId` as a fallback for configs written by older versions of this skill)
 - `baseUrl` → `BASE_URL` (default: `https://api.eventmodelers.ai` if missing)
 
 Resolution priority: **inline param > config file > ask user**
@@ -93,13 +93,13 @@ Stop asking questions. Show this hint and wait for them to paste:
 
 When they paste a JSON object, parse it immediately — accept both `orgId` and `organizationId` as the organization field — apply all values, and proceed directly to Step 3.
 
-**If the user answers no** (or pastes only a partial config), ask for each still-missing field one at a time, in this order: `token`, then `boardId`, then `orgId`. Wait for the answer before asking the next.
+**If the user answers no** (or pastes only a partial config), ask for each still-missing field one at a time, in this order: `token`, then `boardId`, then `organizationId`. Wait for the answer before asking the next.
 
 | Field | What to ask |
 |-------|-------------|
 | `token` | "Please provide your eventmodelers API token (a UUID from your workspace settings)." |
 | `boardId` | "Please provide the board ID you want to work with (the UUID from the board URL)." |
-| `orgId` | "Please provide your organization ID (the UUID from your organization settings)." |
+| `organizationId` | "Please provide your organization ID (the UUID from your organization settings)." |
 | `baseUrl` | Do **not** ask — default to `https://api.eventmodelers.ai` silently. |
 
 Where to find the token: users generate API tokens in their workspace settings at the eventmodelers platform. The token is shown only once at creation time. It is a UUID and must belong to the same organization as the board.
@@ -116,7 +116,7 @@ mkdir -p .eventmodelers
 {
   "token": "<TOKEN>",
   "boardId": "<BOARD_ID>",
-  "orgId": "<ORG_ID>",
+  "organizationId": "<ORG_ID>",
   "baseUrl": "<BASE_URL>"
 }
 EOF
@@ -171,7 +171,7 @@ curl -s -o /dev/null -w "%{http_code}" \
 {
   "token": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "boardId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "orgId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "baseUrl": "http://localhost:3000"
 }
 ```

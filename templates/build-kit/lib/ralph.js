@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync, mkdirSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { hasCredentials, loadLocalConfig } from './config.js';
 
 // ── HTTP helpers ──────────────────────────────────────────────────────────────
 
@@ -44,23 +45,6 @@ async function retryOn401(label, fn, maxRetries = 3) {
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
-
-function loadLocalConfig(kitDir) {
-  const configPath = join(kitDir, '.eventmodelers', 'config.json');
-  if (!existsSync(configPath)) {
-    console.warn(`[ralph] Note: no .eventmodelers/config.json found — platform sync disabled.`);
-    console.warn(`        To enable board sync, follow: https://app.eventmodelers.ai/documentation#build-cratis-csharp`);
-    console.warn(`        Code generation from local slice definitions will still run.`);
-    return {};
-  }
-  const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
-  if (process.env.BASE_URL) cfg.baseUrl = process.env.BASE_URL;
-  return cfg;
-}
-
-function hasCredentials(cfg) {
-  return !!(cfg.token && cfg.organizationId && cfg.boardId && cfg.baseUrl);
-}
 
 async function fetchPlatformConfig(local) {
   const remote = await fetchJSON(`${local.baseUrl}/api/config`, {
