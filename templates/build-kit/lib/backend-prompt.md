@@ -9,21 +9,16 @@ implementing.
 ## Your Task
 
 0. Do not read the entire codebase. Focus on the task in this description.
-1. Read `.build-kit/.slices/current_context.json` to find the active context name, then
-   read `.build-kit/.slices/<contextName>/index.json`. Every item with status "Planned"
-   is a task.
+1. The **Build request** at the end of this prompt names the slice to build (id, title, context) and
+   the path of its `slice.json`. Build exactly that slice — do not search the index for another one.
 2. Read the progress log at `progress.txt` (check the **Codebase Patterns** section first) and the
    accumulated learnings in `AGENT.md`.
 3. Make sure you are on the right branch `feature/<slicename>`; if unsure, start from `main`.
-4. Pick the **highest priority** slice where status is **exactly** "Planned" (case insensitive). This
-   becomes your PRD. Set its status to "InProgress" in `index.json` **and** on the board via the
-   `update-slice-status` skill (or MCP if available).
-   **Only work on slices with status "Planned". Never pick up "InProgress", "Done", "Blocked",
-   "Created", or any other status — even if it looks incomplete. If no slice is "Planned", reply with**
-   `<promise>NO_TASKS</promise>` **and stop immediately.**
-5. Read the slice definition from
-   `.build-kit/.slices/<contextName>/<folder>/slice.json` — it is the source of truth.
-   Never work on more than one slice per iteration.
+4. The requested slice becomes your PRD. Set its status to "InProgress" in `index.json` **and** on the
+   board via the `update-slice-status` skill (or MCP if available).
+5. Read the slice definition from the `slice.json` named in the build request — it is the source of
+   truth and holds the slice's elements, fields and specifications, fetched from the board right
+   before this turn. Never work on more than one slice per iteration.
 6. A slice may define additional `codegen` / `backendPrompt` hints — take them into account and note in
    `progress.txt` when used.
 7. Determine the slice type and load the matching skill:

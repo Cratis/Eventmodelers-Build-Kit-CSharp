@@ -5,44 +5,12 @@
 //   onTask(prompt) — called when tasks.json has entries
 //   onPlannedSlice(prompt) — called when .slices/ has a "Planned" entry (omit to skip)
 
-import { createClient } from '@supabase/supabase-js';
-import { readFileSync, mkdirSync, writeFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { hasCredentials, loadLocalConfig } from './config.js';
-
-// ── HTTP helpers ──────────────────────────────────────────────────────────────
-
-class HttpError extends Error {
-  constructor(status, body) {
-    super(`HTTP ${status}: ${body}`);
-    this.status = status;
-  }
-}
-
-async function fetchJSON(url, options) {
-  const res = await fetch(url, options);
-  if (!res.ok) throw new HttpError(res.status, await res.text());
-  return res.json();
-}
-
-async function retryOn401(label, fn, maxRetries = 3) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      if (err instanceof HttpError && err.status === 401) {
-        if (attempt < maxRetries) {
-          console.warn(`[agent] ${label} — 401, retrying (${attempt}/${maxRetries})...`);
-          continue;
-        }
-        console.error(`[agent] ${label} — 401 after ${maxRetries} retries, shutting down`);
-        process.exit(1);
-      }
-      throw err;
-    }
-  }
-}
+import { boardClient, fetchJSON, retryOn401 } from './board-api.js';
+import { buildRequest, findPlannedSlice, persistSlices, writeSliceDefinition } from './slices.js';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -63,63 +31,6 @@ async function getRealtimeToken(cfg) {
   return token;
 }
 
-function slugify(str) {
-  return str.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-}
-
-async function fetchAndPersistSlices(cfg, kitDir) {
-  const url = `${cfg.baseUrl}/api/org/${cfg.organizationId}/boards/${cfg.boardId}/slicedata/slices`;
-  const { slices } = await fetchJSON(url, {
-    headers: { 'x-token': cfg.token, 'x-board-id': cfg.boardId },
-  });
-  const slicesDir = join(kitDir, '.slices');
-  mkdirSync(slicesDir, { recursive: true });
-
-  // Group by context slug
-  const contexts = {};
-  for (const slice of slices) {
-    const contextSlug = slice.contextName ? slugify(slice.contextName) : 'default';
-    if (!contexts[contextSlug]) contexts[contextSlug] = { name: slice.contextName || 'default', slices: [] };
-    contexts[contextSlug].slices.push(slice);
-  }
-
-  // Write current_context.json pointing to the context with planned work (or first)
-  const ctxPath = join(slicesDir, 'current_context.json');
-  const plannedCtx = Object.keys(contexts).find(c => contexts[c].slices.some(s => (s.status || '').toLowerCase() === 'planned'));
-  const activeCtx = plannedCtx || Object.keys(contexts)[0] || 'default';
-  writeFileSync(ctxPath, JSON.stringify({ name: activeCtx }, null, 2), 'utf-8');
-
-  // Write per-context index.json and per-slice slice.json
-  for (const [contextSlug, { slices: ctxSlices }] of Object.entries(contexts)) {
-    const contextDir = join(slicesDir, contextSlug);
-    mkdirSync(contextDir, { recursive: true });
-
-    const indexSlices = ctxSlices.map((s, i) => {
-      const folder = (s.title ?? s.id).replaceAll(' ', '').toLowerCase();
-      return {
-        id: s.id,
-        slice: s.title,
-        index: i,
-        contextName: s.contextName || contextSlug,
-        contextSlug,
-        folder,
-        status: s.status,
-        definition: { id: s.id, title: s.title, status: s.status },
-      };
-    });
-    writeFileSync(join(contextDir, 'index.json'), JSON.stringify({ slices: indexSlices }, null, 2), 'utf-8');
-
-    for (const slice of ctxSlices) {
-      const folder = (slice.title ?? slice.id).replaceAll(' ', '').toLowerCase();
-      const sliceDir = join(contextDir, folder);
-      mkdirSync(sliceDir, { recursive: true });
-      writeFileSync(join(sliceDir, 'slice.json'), JSON.stringify(slice, null, 2), 'utf-8');
-    }
-  }
-
-  console.log(`[agent] Persisted ${slices.length} slice(s)`);
-}
-
 async function writeTask(payload, kitDir) {
   const tasksPath = join(kitDir, 'tasks.json');
   const existing = existsSync(tasksPath) ? JSON.parse(readFileSync(tasksPath, 'utf-8')) : [];
@@ -131,9 +42,11 @@ async function writeTask(payload, kitDir) {
 }
 
 async function startRealtimeAgent(cfg, kitDir) {
+  const { createClient } = await import('@supabase/supabase-js');
+  const board = boardClient(cfg);
   let realtimeToken = await retryOn401('getRealtimeToken', () => getRealtimeToken(cfg));
 
-  await retryOn401('fetchAndPersistSlices', () => fetchAndPersistSlices(cfg, kitDir)).catch((err) =>
+  await retryOn401('persistSlices', () => persistSlices(board, kitDir)).catch((err) =>
     console.error('[agent] Initial slice fetch error:', err),
   );
 
@@ -155,7 +68,7 @@ async function startRealtimeAgent(cfg, kitDir) {
     .on('broadcast', { event: 'slice:changed' }, async (msg) => {
       const payload = msg.payload;
       console.log(`[agent] slice:changed — slice="${payload.sliceTitle}" status="${payload.sliceStatus}"`);
-      await retryOn401('fetchAndPersistSlices', () => fetchAndPersistSlices(cfg, kitDir)).catch((err) =>
+      await retryOn401('persistSlices', () => persistSlices(board, kitDir)).catch((err) =>
         console.error('[agent] Slice persist error:', err),
       );
       // Planned slices are handled by onPlannedSlice directly — no task needed
@@ -204,21 +117,6 @@ function hasPendingTasks(kitDir) {
   }
 }
 
-function getFirstPlannedSliceTitle(kitDir) {
-  const slicesDir = join(kitDir, '.slices');
-  if (!existsSync(slicesDir)) return null;
-  for (const entry of readdirSync(slicesDir)) {
-    const indexPath = join(slicesDir, entry, 'index.json');
-    if (!existsSync(indexPath)) continue;
-    try {
-      const { slices } = JSON.parse(readFileSync(indexPath, 'utf-8'));
-      const planned = slices && slices.find((s) => (s.status || '').toLowerCase() === 'planned');
-      if (planned) return planned.slice || planned.id || null;
-    } catch {}
-  }
-  return null;
-}
-
 async function runWithRetry(label, fn) {
   while (true) {
     try {
@@ -236,6 +134,7 @@ async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
   const promptFile = join(kitDir, 'lib', 'prompt.md');
   const backendPromptFile = join(kitDir, 'lib', 'backend-prompt.md');
   const credentialed = hasCredentials(cfg);
+  const board = credentialed ? boardClient(cfg) : null;
 
   while (true) {
     let didWork = false;
@@ -243,16 +142,19 @@ async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
     if (credentialed && hasPendingTasks(kitDir)) {
       const prompt = readFileSync(promptFile, 'utf-8');
       await runWithRetry('onTask: loading slice from board...', () => onTask(prompt));
-      await fetchAndPersistSlices(cfg, kitDir).catch(() => {});
+      await persistSlices(board, kitDir).catch(() => {});
       didWork = true;
     }
 
-    const plannedTitle = onPlannedSlice && getFirstPlannedSliceTitle(kitDir);
-    if (plannedTitle) {
-      const prompt = readFileSync(backendPromptFile, 'utf-8');
-      await runWithRetry(`onPlannedSlice: building slice "${plannedTitle}"...`, () => onPlannedSlice(prompt));
+    const planned = onPlannedSlice && findPlannedSlice(kitDir);
+    if (planned) {
+      await runWithRetry(`onPlannedSlice: building slice "${planned.slice}"...`, async () => {
+        // The list endpoint holds summaries only: fetch the full definition before every build
+        if (board) await writeSliceDefinition(board, kitDir, planned);
+        await onPlannedSlice(`${readFileSync(backendPromptFile, 'utf-8')}\n\n${buildRequest(planned)}`);
+      });
       console.log(`[ralph] Slice build complete — waiting for next slice`);
-      if (credentialed) await fetchAndPersistSlices(cfg, kitDir).catch(() => {});
+      if (credentialed) await persistSlices(board, kitDir).catch(() => {});
       didWork = true;
     }
 

@@ -40,7 +40,7 @@ This mirrors [event modeling](https://eventmodeling.org/)'s four slice patterns 
 
 1. **Check triggers.** Read `tasks.json` and scan `.slices/*/index.json` for a `planned` entry.
 2. **If a task is pending:** run `prompt.md` — fetch the slice from the board via the `load-slice` skill, persist it under `.slices/`, and clear the task.
-3. **If a slice is planned:** run `backend-prompt.md` — route to the correct build skill, generate the code, run `dotnet build` and `dotnet test`, then call `update-slice-status` to mark the slice `Done` (or `Blocked`, with the failure reason, if the build or tests fail).
+3. **If a slice is planned:** fetch its full definition (elements, fields and specifications) from the board's `slicedata?contextName=…&sliceId=…` endpoint into its `slice.json` — the slice list holds only id, title and status — then run `backend-prompt.md` with a build request naming the slice, its context and its `slice.json`. The agent routes to the correct build skill, generate the code, run `dotnet build` and `dotnet test`, then call `update-slice-status` to mark the slice `Done` (or `Blocked`, with the failure reason, if the build or tests fail).
 4. **Idle.** If neither trigger fired, wait and check again.
 
 ## See Also
