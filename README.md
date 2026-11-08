@@ -128,7 +128,7 @@ Here's what happens when you mark a slice as `Planned` on your Eventmodelers boa
 
 ### 2. Kit Fetches and Persists the Slice
 
-The kit saves the slice to `.build-kit/.slices/Authors/register-author/slice.json`:
+The kit claims the slice (sets it to `InProgress`), fetches its full definition — the board's slice list holds only id, title and status — and saves it to `.build-kit/.slices/authors/registerauthor/slice.json`:
 
 ```json
 {
@@ -202,7 +202,7 @@ dotnet test Authors.Registration.Specs
 
 ### 5. Kit Updates Board to `Done`
 
-The kit updates the slice status to `Done` on the Eventmodelers board, completing the loop.
+The loop — not the agent — sets the slice to `Done` on the Eventmodelers board once the agent reports a successful build. A slice that keeps failing is retried a limited number of times and then set to `Blocked` with a comment giving the last failure.
 
 ## Skills
 
@@ -257,12 +257,12 @@ If the kit can't find your credentials:
 
 ### Slice Stuck in `InProgress`
 
-If a slice is stuck in `InProgress`:
+The loop claims a slice by setting it to `InProgress` and always sets a final status: `Done`, `Planned` again for another attempt, or `Blocked` with a comment after the configured number of failed attempts (3 by default). A turn that hangs is stopped after the turn timeout (60 minutes by default). A slice can stay `InProgress` only when the loop itself was stopped mid-build. In that case:
 
 1. Check the kit logs for errors
 2. Verify the generated code builds: `dotnet build`
 3. Run tests: `dotnet test`
-4. Update the slice status manually: [app.eventmodelers.ai](https://app.eventmodelers.ai)
+4. Set the slice back to `Planned` (to retry) or update it manually: [app.eventmodelers.ai](https://app.eventmodelers.ai)
 
 See [The Loop and Triggers](Documentation/understand/the-loop.md#running-without-board-credentials) for how the build trigger behaves independently of board connectivity.
 

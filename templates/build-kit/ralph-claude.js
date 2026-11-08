@@ -16,8 +16,9 @@ const cfg = loadLocalConfig(kitDir);
 const args = claudeArgs(cfg);
 const env = claudeEnv(cfg);
 
-function runTurn(prompt) {
-  return runClaude({ input: turnInput(cfg, prompt), cwd: projectDir, args, env });
+// Resolves with the turn's output; the loop reads the agent's verdict from it
+function runTurn(prompt, { timeoutMs } = {}) {
+  return runClaude({ input: turnInput(cfg, prompt), cwd: projectDir, args, env, timeoutMs });
 }
 
 startRalph({

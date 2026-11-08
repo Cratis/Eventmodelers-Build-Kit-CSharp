@@ -2,15 +2,19 @@
 // Not meant to be run directly — use ralph-claude.js.
 //
 // startRalph({ kitDir, projectDir, onTask, onPlannedSlice })
-//   onTask(prompt) — called when tasks.json has entries
-//   onPlannedSlice(prompt) — called when .slices/ has a "Planned" entry (omit to skip)
+//   onTask(prompt, { timeoutMs }) — called when tasks.json has entries
+//   onPlannedSlice(prompt, { timeoutMs }) — called for a "Planned" slice (omit to skip); resolves with
+//   the turn's output, from which the loop reads the agent's verdict
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { hostname } from 'os';
+import { BuildAttempts } from './build-attempts.js';
+import { buildPlannedSlice, loopSettings } from './slice-builder.js';
 import { hasCredentials, loadLocalConfig } from './config.js';
 import { boardClient, fetchJSON, retryOn401 } from './board-api.js';
-import { buildRequest, findPlannedSlice, persistSlices, writeSliceDefinition } from './slices.js';
+import { findPlannedSlice, persistSlices } from './slices.js';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -117,17 +121,38 @@ function hasPendingTasks(kitDir) {
   }
 }
 
-async function runWithRetry(label, fn) {
-  while (true) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function dropOldestTask(kitDir) {
+  const tasksPath = join(kitDir, 'tasks.json');
+  try {
+    const tasks = JSON.parse(readFileSync(tasksPath, 'utf-8'));
+    tasks.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    const [dropped] = tasks.splice(0, 1);
+    writeFileSync(tasksPath, JSON.stringify(tasks, null, 2), 'utf-8');
+    return dropped;
+  } catch (err) {
+    // An unreadable tasks.json cannot be repaired here; replace it so the loop does not spin on it
+    console.error(`[ralph] tasks.json is unreadable (${err.message}) — resetting it`);
+    writeFileSync(tasksPath, '[]', 'utf-8');
+    return null;
+  }
+}
+
+// A task turn gets the same limits as a build: a timeout per turn and a bounded number of attempts
+async function runTask(kitDir, onTask, prompt, settings) {
+  for (let attempt = 1; attempt <= settings.maxAttempts; attempt++) {
     try {
-      console.log(`[ralph] ${label}`);
-      await fn();
+      console.log(`[ralph] onTask: loading slice from board (attempt ${attempt}/${settings.maxAttempts})...`);
+      await onTask(prompt, { timeoutMs: settings.turnTimeoutMs });
       return;
     } catch (err) {
-      console.error(`[ralph] Error — retrying in 60s:`, err.message);
-      await new Promise((r) => setTimeout(r, 60_000));
+      console.error(`[ralph] Task turn failed: ${err.message}`);
+      if (attempt < settings.maxAttempts) await sleep(settings.retryDelayMs);
     }
   }
+  const dropped = dropOldestTask(kitDir);
+  console.error(`[ralph] Dropped task ${dropped?.id} (slice "${dropped?.payload?.sliceTitle}") after ${settings.maxAttempts} failed turns`);
 }
 
 async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
@@ -135,30 +160,40 @@ async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
   const backendPromptFile = join(kitDir, 'lib', 'backend-prompt.md');
   const credentialed = hasCredentials(cfg);
   const board = credentialed ? boardClient(cfg) : null;
+  const settings = loopSettings(cfg);
+  const attempts = new BuildAttempts(join(kitDir, 'build-attempts.json'));
+  const agentId = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
   while (true) {
     let didWork = false;
 
     if (credentialed && hasPendingTasks(kitDir)) {
-      const prompt = readFileSync(promptFile, 'utf-8');
-      await runWithRetry('onTask: loading slice from board...', () => onTask(prompt));
+      await runTask(kitDir, onTask, readFileSync(promptFile, 'utf-8'), settings);
       await persistSlices(board, kitDir).catch(() => {});
       didWork = true;
     }
 
-    const planned = onPlannedSlice && findPlannedSlice(kitDir);
+    // A slice that used up its attempts is skipped even if a Blocked update did not reach the board
+    const planned = onPlannedSlice && findPlannedSlice(kitDir, (entry) => attempts.count(entry.id) < settings.maxAttempts);
     if (planned) {
-      await runWithRetry(`onPlannedSlice: building slice "${planned.slice}"...`, async () => {
-        // The list endpoint holds summaries only: fetch the full definition before every build
-        if (board) await writeSliceDefinition(board, kitDir, planned);
-        await onPlannedSlice(`${readFileSync(backendPromptFile, 'utf-8')}\n\n${buildRequest(planned)}`);
+      console.log(`[ralph] onPlannedSlice: building slice "${planned.slice}"...`);
+      const result = await buildPlannedSlice({
+        entry: planned,
+        kitDir,
+        board,
+        attempts,
+        settings,
+        runTurn: onPlannedSlice,
+        prompt: readFileSync(backendPromptFile, 'utf-8'),
+        agentId,
+        sleep,
       });
-      console.log(`[ralph] Slice build complete — waiting for next slice`);
       if (credentialed) await persistSlices(board, kitDir).catch(() => {});
+      if (result.status === 'Retry') await sleep(settings.retryDelayMs);
       didWork = true;
     }
 
-    if (!didWork) await new Promise((r) => setTimeout(r, 10_000));
+    if (!didWork) await sleep(10_000);
   }
 }
 

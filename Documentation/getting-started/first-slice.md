@@ -49,7 +49,7 @@ On [app.eventmodelers.ai](https://app.eventmodelers.ai), create or open a slice 
 
 ## 2. The kit fetches and persists the slice
 
-Watch the terminal for the board change and persistence output, then inspect the saved definition. For the example above, the context and title become `.build-kit/.slices/authors/registerauthor/slice.json`. Check that it describes the slice you selected before reviewing generated code.
+Watch the terminal for the board change and persistence output. Before building, the loop claims the slice (sets it to `InProgress`) and fetches its full definition — commands, events, fields and specifications — into `slice.json`, then inspect that saved definition. For the example above, the context and title become `.build-kit/.slices/authors/registerauthor/slice.json`. Check that it describes the slice you selected before reviewing generated code.
 
 ## 3. The kit generates the vertical slice
 
@@ -79,10 +79,10 @@ dotnet test Authors.Registration.Specs
 
 ## 5. The kit updates the board to `Done`
 
-The build instructions tell the agent to mark the slice `Done` after the checks pass. Check the board status alongside the successful build and test output, then review the generated files against the slice definition. A `Done` label alone does not show you what was implemented.
+When the agent reports the slice built after the checks pass, the loop sets it to `Done`. If the build keeps failing, the loop retries it a limited number of times (3 by default) and then sets it to `Blocked` with a comment giving the last failure. Check the board status alongside the successful build and test output, then review the generated files against the slice definition. A `Done` label alone does not show you what was implemented.
 
 ## What's next
 
 - Try a slice with `projections`/`readModel` set — it routes to `build-state-view` instead
 - Try a slice with `processors` set — it routes to `build-automation`
-- If a slice gets stuck in `InProgress`, check the loop's terminal output and confirm `dotnet build` succeeds locally. The build trigger selects only `Planned` slices, and the task instructions skip `InProgress`; re-running the loop alone does not make that slice eligible again.
+- If a slice stays `InProgress`, the loop was most likely stopped mid-build. Check the loop's terminal output, confirm `dotnet build` succeeds locally, and set the slice back to `Planned` to retry it. See [Retries, timeouts and blocked slices](../understand/the-loop.md#retries-timeouts-and-blocked-slices).

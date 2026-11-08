@@ -38,10 +38,26 @@ This mirrors [event modeling](https://eventmodeling.org/)'s four slice patterns 
 
 ## One iteration, end to end
 
-1. **Check triggers.** Read `tasks.json` and scan `.slices/*/index.json` for a `planned` entry.
+1. **Check triggers.** Read `tasks.json` and scan `.slices/*/index.json` for a `planned` entry whose build attempts are not used up.
 2. **If a task is pending:** run `prompt.md` — fetch the slice from the board via the `load-slice` skill, persist it under `.slices/`, and clear the task.
-3. **If a slice is planned:** fetch its full definition (elements, fields and specifications) from the board's `slicedata?contextName=…&sliceId=…` endpoint into its `slice.json` — the slice list holds only id, title and status — then run `backend-prompt.md` with a build request naming the slice, its context and its `slice.json`. The agent routes to the correct build skill, generate the code, run `dotnet build` and `dotnet test`, then call `update-slice-status` to mark the slice `Done` (or `Blocked`, with the failure reason, if the build or tests fail).
+3. **If a slice is planned:**
+   1. **Claim it.** The loop re-reads the slice from the board and skips it unless it is still `Planned`. It then sets `InProgress` together with its own claim id and, after a short pause, reads the slice back. If another loop's claim replaced it, this loop skips the slice.
+   2. **Fetch the definition.** The loop fetches the slice's full definition (elements, fields and specifications) from the board's `slicedata?contextName=…&sliceId=…` endpoint into its `slice.json` — the slice list holds only id, title and status.
+   3. **Run one turn.** The loop runs `backend-prompt.md` with a build request that names the slice, its context, its `slice.json` and the attempt number. The agent routes to the correct build skill, generates the code, runs `dotnet build` and `dotnet test`, commits, and ends with `<promise>DONE</promise>` or `<promise>BLOCKED: <reason></promise>`. It never sets a slice status itself.
+   4. **Set the final status.** The loop sets `Done` on `DONE`, and `Blocked` with a board comment carrying the reason on `BLOCKED`. Anything else — a failed or hung turn, or no verdict — is a failed attempt: the loop sets the slice back to `Planned` and tries again after the retry delay.
 4. **Idle.** If neither trigger fired, wait and check again.
+
+## Retries, timeouts and blocked slices
+
+| Limit | Default | Config field (`.build-kit/.eventmodelers/config.json`) | Environment variable |
+|---|---|---|---|
+| Attempts before a slice is set to `Blocked` | 3 | `maxBuildAttempts` | `RALPH_MAX_ATTEMPTS` |
+| Turn timeout — a turn running longer is stopped and counts as a failed attempt | 60 minutes | `turnTimeoutMinutes` | `RALPH_TURN_TIMEOUT_MINUTES` |
+| Delay before retrying a failed attempt | 60 seconds | `retryDelaySeconds` | `RALPH_RETRY_DELAY_SECONDS` |
+
+Failed attempts are counted per slice in `.build-kit/build-attempts.json`, so a restart keeps counting. When a slice reaches the limit, the loop sets it to `Blocked` on the board and comments with the number of attempts and the last failure. Moving the slice back to `Planned` starts a new count. A task turn gets the same timeout and attempt limit; a task that keeps failing is dropped from `tasks.json`.
+
+In local-only mode, the loop records the same statuses in the local `index.json` and `slice.json` instead of on the board.
 
 ## See Also
 

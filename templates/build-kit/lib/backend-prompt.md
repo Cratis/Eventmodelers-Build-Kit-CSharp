@@ -14,8 +14,9 @@ implementing.
 2. Read the progress log at `progress.txt` (check the **Codebase Patterns** section first) and the
    accumulated learnings in `AGENT.md`.
 3. Make sure you are on the right branch `feature/<slicename>`; if unsure, start from `main`.
-4. The requested slice becomes your PRD. Set its status to "InProgress" in `index.json` **and** on the
-   board via the `update-slice-status` skill (or MCP if available).
+4. The requested slice becomes your PRD. The loop has already claimed it and set it to "InProgress";
+   **do not change slice statuses** — not in `index.json`, `slice.json`, nor on the board. The loop sets
+   the final status from your reply.
 5. Read the slice definition from the `slice.json` named in the build request — it is the source of
    truth and holds the slice's elements, fields and specifications, fetched from the board right
    before this turn. Never work on more than one slice per iteration.
@@ -57,7 +58,7 @@ implementing.
     proxies, then register them in the feature's composition page.
 14. If checks pass, Stage only the files that belong to this slice by explicit path (`git add <path> ...`) — never `git add -A`, `git add .` or `git commit -a`. Never stage `.eventmodelers/`, `.env*`, key files or credential files. Run `git status` and check the staged list before committing, then commit with message `feat: <Slice Name>` and merge back to `main` as a
     fast-forward merge (update first).
-15. Set `status: Done` for the slice in `index.json` **and** on the board via `update-slice-status`.
+15. Do not set the slice's status — the loop sets `Done` when you reply `<promise>DONE</promise>`.
 16. Append progress to `progress.txt` after each step.
 17. Append new reusable learnings to `AGENT.md` in compressed form (only if not already there).
 18. Finish the iteration.
@@ -116,12 +117,16 @@ cannot execute.
 
 ## Stop Condition
 
-**After completing ONE slice, always stop** — the ralph loop will invoke you again for the next slice.
-Never chain multiple slices in one iteration.
+**After the requested slice, always stop** — the ralph loop will invoke you again for the next slice.
+Never chain multiple slices in one iteration. End your reply with exactly one verdict:
 
-- Slice completed and committed → reply `<promise>DONE</promise>`
-- No slice has status "Planned" → reply `<promise>NO_TASKS</promise>`
-- ALL slices across the index are Done → reply `<promise>COMPLETE</promise>`
+- Slice implemented, checks green, committed → `<promise>DONE</promise>`
+- The slice cannot be built as defined, or a needed command was refused →
+  `<promise>BLOCKED: <the reason, in one or two sentences></promise>`
+
+Anything else — including running out of ideas, failing checks, or no verdict — counts as a failed
+attempt. The loop retries the slice a limited number of times, then marks it `Blocked` on the board with
+your last failure, so leave a clear reason in `progress.txt` when a build does not succeed.
 
 ## Important
 
