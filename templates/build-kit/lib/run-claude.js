@@ -2,15 +2,14 @@
 // `claude -p` reads its prompt from stdin when no prompt argument is given.
 
 import { spawn } from 'child_process';
-
-const DEFAULT_ARGS = ['--dangerously-skip-permissions', '-p'];
+import { claudeArgs } from './claude-options.js';
 
 /**
  * Resolves only when the whole prompt was written and the child exited with code 0.
  * Rejects on spawn failure, any stdin error (including EPIPE when the child exits early),
  * a prompt that was not fully delivered, or a nonzero exit. It settles exactly once.
  */
-export function runClaude({ input, cwd, command = 'claude', args = DEFAULT_ARGS }) {
+export function runClaude({ input, cwd, command = 'claude', args = claudeArgs() }) {
   return new Promise((resolve, reject) => {
     let settled = false;
     let delivered = false;

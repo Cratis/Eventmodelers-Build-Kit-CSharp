@@ -67,6 +67,13 @@ implementing.
 17. Append new reusable learnings to `AGENT.md` in compressed form (only if not already there).
 18. Finish the iteration.
 
+## Permissions
+
+You run with an explicit allow list. If a command or file write you need is refused by the
+permission system, do not work around it and do not retry it with another tool. Stop and reply
+`<promise>BLOCKED: <the refused command and why it was needed></promise>` — the loop marks the slice
+`Blocked` on the board with that reason.
+
 ## Sequencing (Cratis-specific)
 
 `dotnet build` generates the TypeScript proxies — **the frontend of a slice cannot reference its proxy

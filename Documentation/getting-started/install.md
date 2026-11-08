@@ -141,7 +141,7 @@ Open `http://localhost:9000` to check the starter app before launching the agent
 
 ### Start the Claude loop
 
-Review the installed changes before giving the agent control of the project. The launcher uses `--dangerously-skip-permissions`, and the build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify. A board that already has `Planned` slices can trigger work as soon as the loop starts.
+Review the installed changes before giving the agent control of the project. The launcher runs Claude with an explicit allow list: file edits are accepted inside the project only, and the agent may run only `dotnet build`/`test`/`restore`, the `git` commands for its branch policy (no push, reset or rebase), `yarn install`/`build`/`lint`/`test`, and `curl` for the board API. A command outside the list is refused, and the slice is reported as blocked. To allow more, add entries to `allowedTools` in `.build-kit/.eventmodelers/config.json` or to the comma-separated `RALPH_ALLOWED_TOOLS` environment variable (for example `Bash(npm run build:*)`); entries that bypass permission checks are refused. The build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify. A board that already has `Planned` slices can trigger work as soon as the loop starts.
 
 Start one Claude loop in a separate terminal from the project root and leave its output visible:
 

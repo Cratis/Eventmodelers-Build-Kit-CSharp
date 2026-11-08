@@ -4,6 +4,7 @@
 
 import { startRalph, loadLocalConfig } from './lib/ralph.js';
 import { runClaude } from './lib/run-claude.js';
+import { claudeArgs } from './lib/claude-options.js';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,8 +16,10 @@ const inlineHeader = cfg.boardId
   ? `board=${cfg.boardId} token=${cfg.token} org=${cfg.organizationId} baseUrl=${cfg.baseUrl}\n\n`
   : '';
 
+const args = claudeArgs(cfg);
+
 function runClaudeWithHeader(prompt) {
-  return runClaude({ input: inlineHeader + prompt, cwd: projectDir });
+  return runClaude({ input: inlineHeader + prompt, cwd: projectDir, args });
 }
 
 startRalph({

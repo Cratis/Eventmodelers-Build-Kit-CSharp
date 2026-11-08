@@ -117,6 +117,12 @@ If `.build-kit/tasks.json` is empty (`[]`) or does not exist, reply with:
 
 After completing a task, add any **reusable** learnings to `AGENT.md` — patterns, gotchas, API quirks, or skill behaviour that future iterations should know. Only add things that are general and applicable beyond this single task. Do not duplicate what is already there.
 
+## Permissions
+
+You run with an explicit allow list. If a command you need is refused by the permission system, do not
+work around it. Log the refused command in `progress.txt`, remove the task from `tasks.json`, and reply
+`<promise>BLOCKED: <the refused command></promise>`.
+
 ## Important
 
 - Process **one task per iteration**.
