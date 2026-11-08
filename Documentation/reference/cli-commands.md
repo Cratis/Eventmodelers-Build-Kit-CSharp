@@ -26,6 +26,7 @@ npx github:Cratis/Eventmodelers-Build-Kit-CSharp install
 4. Adds `.build-kit/` to `.gitignore`
 5. Prompts for Eventmodelers credentials and writes `.eventmodelers/config.json` at the project root, with a copy under `.build-kit/.eventmodelers/config.json`
 6. Writes the `mcpServers.eventmodelers` entry into `.build-kit/.claude/settings.json`, pointing at `<baseUrl>/mcp`
+7. Generates the code export server's secret and stores it as `codeExportSecret` in `.build-kit/.eventmodelers/config.json`, keeping one that already exists
 
 See [Install the Kit](../getting-started/install.md) for the full walkthrough.
 
@@ -71,6 +72,20 @@ These aren't CLI subcommands — they're the scripts `install` copies into `.bui
 | `node .build-kit/ralph-claude.js /path/to/project` | Point the loop at a project directory other than the kit's parent |
 
 For a first run, follow [Run Your First Slice](../getting-started/first-slice.md). See [Understanding the Loop](../understand/the-loop.md) for how the running loop selects work.
+
+## Code export server
+
+```bash
+node .build-kit/code-export.mjs
+```
+
+The code export server lets the board write slice files and screen images into the project and commit them. Because those routes change your working copy, the server:
+
+- Listens on `127.0.0.1` only (port `3001`, or `PORT`).
+- Accepts browser requests only from the board's origin, `https://app.eventmodelers.ai`. Set `codeExportAllowedOrigins` in `.build-kit/.eventmodelers/config.json`, or the comma-separated `CODE_EXPORT_ALLOWED_ORIGINS` environment variable, to allow others, such as a local board.
+- Requires the per-install secret on every request, as `Authorization: Bearer <secret>` or `X-Export-Secret: <secret>`. The secret is `codeExportSecret` in `.build-kit/.eventmodelers/config.json`; the server generates it on first start when the installer has not. Give it to the board's code export settings, and treat it like the board token.
+
+Requests without the secret get `401`; requests from another origin get `403`.
 
 ## See Also
 

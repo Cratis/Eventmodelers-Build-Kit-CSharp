@@ -16,6 +16,8 @@ import {
 import { execSync } from 'child_process';
 import {
   ensureCredentialIgnored,
+  ensureExportSecret,
+  readJsonFile,
   mergeGitignore,
   mergeGitignoreFromTemplate,
   restrictCredentialFiles,
@@ -170,6 +172,9 @@ program
     const kitConfigPath = join(kitConfigDir, 'config.json');
     mkdirSync(kitConfigDir, { recursive: true });
 
+    // The code export server's secret lives in the kit config; keep it across re-runs
+    const existingExportSecret = readJsonFile(kitConfigPath).codeExportSecret;
+
     // Tighten permissions on every run so older installs with world-readable copies are fixed too
     restrictCredentialFiles([rootConfigPath, kitConfigPath]);
     windowsCredentialNotice();
@@ -215,6 +220,9 @@ program
     } else {
       console.log('\n  ✓ Config already present — skipping credential prompt');
     }
+
+    ensureExportSecret(kitConfigPath, existingExportSecret);
+    console.log('  ✓ Code export secret stored in .build-kit/.eventmodelers/config.json (codeExportSecret)');
 
     // Configure MCP server in .claude/settings.json
     const claudeDir = join(targetDir, '.claude');
