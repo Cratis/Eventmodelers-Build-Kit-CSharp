@@ -9,7 +9,7 @@ import { claudeArgs } from './claude-options.js';
  * Rejects on spawn failure, any stdin error (including EPIPE when the child exits early),
  * a prompt that was not fully delivered, or a nonzero exit. It settles exactly once.
  */
-export function runClaude({ input, cwd, command = 'claude', args = claudeArgs() }) {
+export function runClaude({ input, cwd, command = 'claude', args = claudeArgs(), env = process.env }) {
   return new Promise((resolve, reject) => {
     let settled = false;
     let delivered = false;
@@ -19,7 +19,7 @@ export function runClaude({ input, cwd, command = 'claude', args = claudeArgs() 
       reject(error);
     };
 
-    const proc = spawn(command, args, { cwd, stdio: ['pipe', 'inherit', 'inherit'] });
+    const proc = spawn(command, args, { cwd, env, stdio: ['pipe', 'inherit', 'inherit'] });
     proc.on('error', fail);
     proc.stdin.on('error', fail);
     proc.stdin.on('finish', () => { delivered = true; });

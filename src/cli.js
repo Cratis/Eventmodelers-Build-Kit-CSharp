@@ -232,9 +232,11 @@ program
 
     const baseUrl = config.baseUrl || 'https://api.eventmodelers.ai';
     settings.mcpServers = settings.mcpServers || {};
+    // The token stays out of this file: Claude Code expands the variable from the environment
     settings.mcpServers.eventmodelers = {
       type: 'http',
       url: `${baseUrl}/mcp`,
+      headers: { Authorization: 'Bearer ${EVENTMODELERS_TOKEN}' },
     };
 
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2));

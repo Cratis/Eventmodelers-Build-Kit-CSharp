@@ -32,7 +32,7 @@ Paste each value, or press Enter to skip and connect later.
 
 If you skipped credentials at install time, or need to change them later, use `/connect` inside Claude Code. The skill:
 
-1. Checks for inline overrides (`board=<uuid>`, `token=<uuid>`, `org=<uuid>`, `baseUrl=<url>`) in the prompt that invoked it
+1. Checks for inline overrides (`board=<uuid>`, `org=<uuid>`, `baseUrl=<url>`) in the prompt that invoked it. A token is never accepted inline: the skills reference it as `$EVENTMODELERS_TOKEN`, which the loop sets from the kit config, so the value never appears in a prompt or transcript
 2. Falls back to `.eventmodelers/config.json` for any value not overridden
 3. Asks for missing credentials and uses `https://api.eventmodelers.ai` when `baseUrl` is missing
 4. When it had to ask for missing values, writes them to `.eventmodelers/config.json` in the current working directory. If every value was already available (for example a complete config plus an inline `board=` override), it skips this step, so an inline override is not saved

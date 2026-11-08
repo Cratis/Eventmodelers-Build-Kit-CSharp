@@ -4,7 +4,8 @@
 
 import { startRalph, loadLocalConfig } from './lib/ralph.js';
 import { runClaude } from './lib/run-claude.js';
-import { claudeArgs } from './lib/claude-options.js';
+import { claudeArgs, claudeEnv } from './lib/claude-options.js';
+import { turnInput } from './lib/turn-input.js';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,21 +13,18 @@ const kitDir = dirname(fileURLToPath(import.meta.url));
 const projectDir = process.argv[2] ? resolve(process.argv[2]) : resolve(kitDir, '..');
 
 const cfg = loadLocalConfig(kitDir);
-const inlineHeader = cfg.boardId
-  ? `board=${cfg.boardId} token=${cfg.token} org=${cfg.organizationId} baseUrl=${cfg.baseUrl}\n\n`
-  : '';
-
 const args = claudeArgs(cfg);
+const env = claudeEnv(cfg);
 
-function runClaudeWithHeader(prompt) {
-  return runClaude({ input: inlineHeader + prompt, cwd: projectDir, args });
+function runTurn(prompt) {
+  return runClaude({ input: turnInput(cfg, prompt), cwd: projectDir, args, env });
 }
 
 startRalph({
   kitDir,
   projectDir,
-  onTask: runClaudeWithHeader,
-  onPlannedSlice: runClaudeWithHeader,
+  onTask: runTurn,
+  onPlannedSlice: runTurn,
 }).catch((err) => {
   console.error('[ralph] Fatal:', err);
   process.exit(1);

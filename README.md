@@ -266,6 +266,10 @@ If a slice is stuck in `InProgress`:
 
 See [The Loop and Triggers](Documentation/understand/the-loop.md#running-without-board-credentials) for how the build trigger behaves independently of board connectivity.
 
+### Rotate a Token Sent in Earlier Prompts
+
+Before this fix, the Claude launcher wrote the board token into the first line of every prompt, so it reached the session transcript, any session logs, and the model provider. If you ran the loop with an earlier version, revoke that token in your workspace settings at [app.eventmodelers.ai/account](https://app.eventmodelers.ai/account), create a new one, and put it in `.eventmodelers/config.json` and `.build-kit/.eventmodelers/config.json`. The launcher now passes the token only through the `EVENTMODELERS_TOKEN` environment variable, which the skills' API calls and the board MCP server read.
+
 ## See Also
 
 - **[Documentation](Documentation/)** — Full documentation and guides

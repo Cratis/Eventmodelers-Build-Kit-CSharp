@@ -51,7 +51,36 @@ export function allowedTools(cfg = {}, env = process.env) {
   return [...new Set([...DEFAULT_ALLOWED_TOOLS, ...extra])];
 }
 
+// The token never appears in a prompt or in process arguments. Claude Code expands
+// ${EVENTMODELERS_TOKEN} in the MCP configuration from the environment the runner sets.
+export const TOKEN_VARIABLE = 'EVENTMODELERS_TOKEN';
+
+/** MCP configuration for the board server; the authorization header references the token variable. */
+export function mcpConfig(cfg = {}) {
+  if (!cfg.baseUrl) return null;
+  return JSON.stringify({
+    mcpServers: {
+      eventmodelers: {
+        type: 'http',
+        url: `${cfg.baseUrl}/mcp`,
+        headers: { Authorization: `Bearer \${${TOKEN_VARIABLE}}` },
+      },
+    },
+  });
+}
+
+/** Environment for a turn: the parent environment plus the token for the skills' API calls. */
+export function claudeEnv(cfg = {}, env = process.env) {
+  return cfg.token ? { ...env, [TOKEN_VARIABLE]: cfg.token } : { ...env };
+}
+
 /** Arguments for `claude`: print mode, prompt on stdin, edits limited to the project, explicit allow list. */
 export function claudeArgs(cfg = {}, env = process.env) {
-  return ['-p', '--permission-mode', 'acceptEdits', '--allowedTools', ...allowedTools(cfg, env)];
+  const mcp = mcpConfig(cfg);
+  return [
+    '-p',
+    '--permission-mode', 'acceptEdits',
+    ...(mcp ? ['--mcp-config', mcp] : []),
+    '--allowedTools', ...allowedTools(cfg, env),
+  ];
 }
