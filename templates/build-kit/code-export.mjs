@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, unlinkS
 import { join, dirname, relative } from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
+import { allowedOrigins, authorize, corsHeaders, loadOrCreateExportSecret } from './lib/export-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,12 +12,15 @@ const ROOT = __dirname;
 const CONFIG_PATH = join(ROOT, 'config.json');
 const SLICES_DIR = join(ROOT, '.slices');
 const repoPath = process.env.WORKSPACE_PATH ?? join(__dirname, '..');
+const CREDENTIALS_PATH = join(ROOT, '.eventmodelers', 'config.json');
+const EXPORT_SECRET = loadOrCreateExportSecret(CREDENTIALS_PATH);
+const ALLOWED_ORIGINS = allowedOrigins(CREDENTIALS_PATH);
 
 // ---------------------------------------
 // Helpers
 // ---------------------------------------
 function sendJSON(res, data, status = 200) {
-    res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' });
+    res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data, null, 2));
 }
 
@@ -117,13 +121,14 @@ function gitCommit(path, message, files) {
 // Server
 // ---------------------------------------
 const server = createServer(async (req, res) => {
+    // Only the board's origin may call from a browser, and every request needs the export secret
+    for (const [name, value] of Object.entries(corsHeaders(req.headers.origin, ALLOWED_ORIGINS))) res.setHeader(name, value);
+    const access = authorize(req.method, req.headers, { secret: EXPORT_SECRET, origins: ALLOWED_ORIGINS });
+    if (!access.ok) return sendJSON(res, { error: access.error }, access.status);
+
     // CORS preflight
     if (req.method === 'OPTIONS') {
-        res.writeHead(200, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        });
+        res.writeHead(204);
         return res.end();
     }
 
@@ -543,8 +548,10 @@ const server = createServer(async (req, res) => {
 // Listen
 // ---------------------------------------
 const port = parseInt(process.env.PORT || '3001', 10);
-server.listen(port, () => {
-    console.log(`🚀 Server running at http://localhost:${port}`);
+server.listen(port, '127.0.0.1', () => {
+    console.log(`🚀 Server running at http://127.0.0.1:${server.address().port} (loopback only)`);
+    console.log(`🔐 Requests need the export secret (codeExportSecret in ${CREDENTIALS_PATH}) as "Authorization: Bearer <secret>" or "X-Export-Secret"`);
+    console.log(`🌐 Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
     console.log(`📁 ROOT:       ${ROOT}`);
     console.log(`📁 SLICES_DIR: ${SLICES_DIR}`);
     console.log(`📁 repoPath:   ${repoPath}`);

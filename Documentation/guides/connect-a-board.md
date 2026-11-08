@@ -32,7 +32,7 @@ Paste each value, or press Enter to skip and connect later.
 
 If you skipped credentials at install time, or need to change them later, use `/connect` inside Claude Code. The skill:
 
-1. Checks for inline overrides (`board=<uuid>`, `token=<uuid>`, `org=<uuid>`, `baseUrl=<url>`) in the prompt that invoked it
+1. Checks for inline overrides (`board=<uuid>`, `org=<uuid>`, `baseUrl=<url>`) in the prompt that invoked it. A token is never accepted inline: the skills reference it as `$EVENTMODELERS_TOKEN`, which the loop sets from the kit config, so the value never appears in a prompt or transcript
 2. Falls back to `.eventmodelers/config.json` for any value not overridden
 3. Asks for missing credentials and uses `https://api.eventmodelers.ai` when `baseUrl` is missing
 4. When it had to ask for missing values, writes them to `.eventmodelers/config.json` in the current working directory. If every value was already available (for example a complete config plus an inline `board=` override), it skips this step, so an inline override is not saved
@@ -45,13 +45,13 @@ The installer, skills, and loop read configuration differently:
 
 | Reader | Configuration source |
 |---|---|
-| Installer | Reads `.eventmodelers/config.json` in the project root after you answer **no** to the existing-credentials question. If any of the three credential fields is missing, it prompts and writes both config files; otherwise, it skips both writes. |
+| Installer | Reads `.eventmodelers/config.json` in the project root after you answer **no** to the existing-credentials question. If any of the three credential fields is missing, it prompts (including an optional API base URL) and writes all four fields to both config files; otherwise, it only completes them — adding a missing `baseUrl`, renaming `orgId` to `organizationId`, and filling the kit-local copy's gaps from the root config. |
 | `/connect` skill | Uses **inline parameter > `.eventmodelers/config.json` in the current working directory > ask for missing credentials**, with the skill's default for `baseUrl`. It does not search both config locations. |
-| Loop | Reads **only** `.build-kit/.eventmodelers/config.json`. A nonempty `BASE_URL` environment variable overrides that file's `baseUrl`; there is no root-config fallback or default API URL. |
+| Loop | Reads **only** `.build-kit/.eventmodelers/config.json`. A nonempty `BASE_URL` environment variable overrides that file's `baseUrl`; `orgId` is read as a fallback for `organizationId`. There is no root-config fallback. |
 
-The loop requires `organizationId`, `boardId`, `token`, and `baseUrl`; missing values select local-only mode instead of board sync. The installer's hosted-URL fallback configures MCP only; it does not fill in `baseUrl` in either config file.
+The loop requires `organizationId`, `boardId`, `token`, and `baseUrl`; missing values select local-only mode instead of board sync, and the loop prints which fields are missing. The installer writes `baseUrl` (the hosted platform URL unless you override it), so a fresh install connects without setting `BASE_URL`.
 
-After installation or `/connect`, follow [Complete both config files for every path](../getting-started/install.md#complete-both-config-files-for-every-path), including the copy step and MCP URL check. Use `organizationId` in both files, as shown there.
+After installation or `/connect`, follow [Check both config files](../getting-started/install.md#check-both-config-files), including the MCP URL check. `/connect` writes `organizationId`; the loop still reads `orgId` from older configs.
 
 The installer keeps existing `.gitignore` rules and merges in `.build-kit/` and `.eventmodelers/`. In a Git repository, it checks that the root token file is ignored and appends `.eventmodelers/` again if needed. It warns if the file is still exposed. Follow [Protect the token files after each installer run](../getting-started/install.md#protect-the-token-files-after-each-installer-run) and confirm that the ignore check prints both paths before committing or launching the agent.
 
@@ -79,7 +79,7 @@ Use `/connect` with an inline override to change the board for the skill session
 /connect board=<new-board-uuid>
 ```
 
-Rotating credentials or changing boards requires updating **both** `.eventmodelers/config.json` and `.build-kit/.eventmodelers/config.json`. `/connect` does not synchronize the two files. Edit both, or complete the root config and repeat the [config copy step and MCP URL check](../getting-started/install.md#complete-both-config-files-for-every-path). Repeat the [token-file ignore check](../getting-started/install.md#protect-the-token-files-after-each-installer-run), then restart the loop.
+Rotating credentials or changing boards requires updating **both** `.eventmodelers/config.json` and `.build-kit/.eventmodelers/config.json`. `/connect` does not synchronize the two files. Edit both (the installer only fills fields missing from the kit-local copy; it never replaces values already there), then repeat the [MCP URL check](../getting-started/install.md#check-both-config-files). Repeat the [token-file ignore check](../getting-started/install.md#protect-the-token-files-after-each-installer-run), then restart the loop.
 
 ## See Also
 

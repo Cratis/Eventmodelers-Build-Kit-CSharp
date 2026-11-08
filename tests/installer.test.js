@@ -98,7 +98,7 @@ describe('Installer Layout Contract (R2)', () => {
 
   test('should install templates/build-kit/ to .build-kit/', () => {
     // Verify templates/build-kit/ contents are spread into .build-kit/
-    const kitItems = ['ralph-claude.js', 'ralph-ollama.js', 'lib/'];
+    const kitItems = ['ralph-claude.js', 'lib/'];
     
     kitItems.forEach(item => {
       const kitSourcePath = join(__dirname, '..', 'templates', 'build-kit', item);

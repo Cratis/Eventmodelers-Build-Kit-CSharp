@@ -1,6 +1,7 @@
 // Helpers that keep local credentials out of git and readable only by their owner.
 
 import { execFileSync } from 'child_process';
+import { randomBytes } from 'crypto';
 import { existsSync, readFileSync, writeFileSync, chmodSync } from 'fs';
 import { dirname } from 'path';
 
@@ -73,6 +74,29 @@ export function restrictCredentialFiles(paths, warn = console.warn, chmod = chmo
 export function writeCredentialFile(path, value, warn = console.warn) {
   writeFileSync(path, JSON.stringify(value, null, 2), { mode: OWNER_ONLY });
   restrictCredentialFiles([path], warn);
+}
+
+/** Reads a JSON file, returning an empty object when it is missing or invalid. */
+export function readJsonFile(path) {
+  if (!existsSync(path)) return {};
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Makes sure the kit config holds the code export server's per-install secret, keeping one that
+ * already exists (in the file or passed in). Returns the secret.
+ */
+export function ensureExportSecret(path, existing, create = () => randomBytes(32).toString('hex'), warn = console.warn) {
+  const config = readJsonFile(path);
+  if (!config.codeExportSecret) {
+    config.codeExportSecret = existing || create();
+    writeCredentialFile(path, config, warn);
+  }
+  return config.codeExportSecret;
 }
 
 /** Windows has no POSIX modes and ACLs are not managed here, so say so. */

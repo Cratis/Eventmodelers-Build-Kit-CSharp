@@ -16,6 +16,8 @@ import {
 import { execSync } from 'child_process';
 import {
   ensureCredentialIgnored,
+  ensureExportSecret,
+  readJsonFile,
   mergeGitignore,
   mergeGitignoreFromTemplate,
   restrictCredentialFiles,
@@ -23,6 +25,7 @@ import {
   windowsCredentialNotice,
 } from './local-files.js';
 import { createInterface } from 'readline';
+import { completeConfig, needsCompletion } from './board-config.js';
 
 async function prompt(question) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -170,6 +173,9 @@ program
     const kitConfigPath = join(kitConfigDir, 'config.json');
     mkdirSync(kitConfigDir, { recursive: true });
 
+    // The code export server's secret lives in the kit config; keep it across re-runs
+    const existingExportSecret = readJsonFile(kitConfigPath).codeExportSecret;
+
     // Tighten permissions on every run so older installs with world-readable copies are fixed too
     restrictCredentialFiles([rootConfigPath, kitConfigPath]);
     windowsCredentialNotice();
@@ -180,14 +186,8 @@ program
       process.exit(0);
     }
 
-    let config = {};
-    if (existsSync(rootConfigPath)) {
-      try {
-        config = JSON.parse(readFileSync(rootConfigPath, 'utf-8'));
-      } catch {
-        config = {};
-      }
-    }
+    // organizationId is the field the loop reads; baseUrl defaults to the hosted platform (BASE_URL overrides)
+    let config = completeConfig(readJsonFile(rootConfigPath), process.env.BASE_URL);
 
     const hasConfig = config.organizationId && config.boardId && config.token;
     if (!hasConfig) {
@@ -195,26 +195,36 @@ program
       const orgId   = await prompt(`  Organization ID ${config.organizationId ? `[${config.organizationId}]` : ''}: `);
       const boardId = await prompt(`  Board ID        ${config.boardId        ? `[${config.boardId}]`        : ''}: `);
       const token   = await prompt(`  Token           ${config.token          ? '[set]'                       : ''}: `);
+      const baseUrl = await prompt(`  API base URL    [${config.baseUrl}]: `);
 
       if (orgId)   config.organizationId = orgId;
       if (boardId) config.boardId        = boardId;
       if (token)   config.token          = token;
+      config = completeConfig(config, baseUrl);
 
       // Write to project root (P2: config location)
       // Credentials are owner-readable only
       writeCredentialFile(rootConfigPath, config);
-      // Also copy to kit directory as optional override
+      // Also copy to kit directory, which is the file the loop reads
       writeCredentialFile(kitConfigPath, config);
       
       if (config.organizationId && config.boardId && config.token) {
-        console.log(`\n  ✓ Credentials saved to .eventmodelers/config.json (project root)`);
-        console.log(`  ✓ Also copied to .build-kit/.eventmodelers/config.json (kit override)`);
+        console.log(`\n  ✓ Credentials saved to .eventmodelers/config.json (project root), base URL ${config.baseUrl}`);
+        console.log(`  ✓ Also copied to .build-kit/.eventmodelers/config.json (read by the loop)`);
       } else {
         console.log('\n  ℹ️  Config saved — use /connect in Claude Code to add credentials later');
       }
     } else {
-      console.log('\n  ✓ Config already present — skipping credential prompt');
+      // Earlier installs never wrote baseUrl: complete the root config, and fill the kit config's gaps from it
+      if (needsCompletion(readJsonFile(rootConfigPath), process.env.BASE_URL)) writeCredentialFile(rootConfigPath, config);
+      const kitConfig = readJsonFile(kitConfigPath);
+      const completedKitConfig = completeConfig({ ...config, ...kitConfig }, process.env.BASE_URL);
+      if (JSON.stringify(completedKitConfig) !== JSON.stringify(kitConfig)) writeCredentialFile(kitConfigPath, completedKitConfig);
+      console.log(`\n  ✓ Config already present — base URL ${config.baseUrl}`);
     }
+
+    ensureExportSecret(kitConfigPath, existingExportSecret);
+    console.log('  ✓ Code export secret stored in .build-kit/.eventmodelers/config.json (codeExportSecret)');
 
     // Configure MCP server in .claude/settings.json
     const claudeDir = join(targetDir, '.claude');
@@ -230,11 +240,13 @@ program
       }
     }
 
-    const baseUrl = config.baseUrl || 'https://api.eventmodelers.ai';
+    const baseUrl = config.baseUrl;
     settings.mcpServers = settings.mcpServers || {};
+    // The token stays out of this file: Claude Code expands the variable from the environment
     settings.mcpServers.eventmodelers = {
       type: 'http',
       url: `${baseUrl}/mcp`,
+      headers: { Authorization: 'Bearer ${EVENTMODELERS_TOKEN}' },
     };
 
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
@@ -242,10 +254,8 @@ program
 
     console.log('\n✅ Done!\n');
     console.log('Next steps:\n');
-    console.log('  Claude (default):');
+    console.log('  Run the loop with Claude:');
     console.log('       node .build-kit/ralph-claude.js\n');
-    console.log('  Local Ollama model (run `ollama serve` first):');
-    console.log('       OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js\n');
     console.log('  Pass a custom project directory as the first argument:');
     console.log('       node .build-kit/ralph-claude.js /path/to/project\n');
     console.log('Skills are ready in .build-kit/.claude/skills/ — use /connect to set a board ID.');

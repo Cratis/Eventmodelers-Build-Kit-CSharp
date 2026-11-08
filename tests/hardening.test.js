@@ -201,7 +201,7 @@ describe('Local defaults', () => {
 
   test('the Claude runner does not put the board token in process arguments', () => {
     const text = read('templates', 'build-kit', 'ralph-claude.js');
-    assert.ok(text.includes('input: inlineHeader + prompt'));
+    assert.ok(text.includes('input: turnInput(cfg, prompt)'));
     assert.ok(!text.includes('spawn('));
   });
 });

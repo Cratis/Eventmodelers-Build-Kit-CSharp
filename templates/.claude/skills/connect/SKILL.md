@@ -15,19 +15,34 @@ After running, the following variables are available for the rest of the session
 
 | Variable | Header sent to API | Description |
 |----------|--------------------|-------------|
-| `TOKEN` | `x-token` | API token UUID |
+| `TOKEN` | `x-token` | API token UUID — referenced as `$EVENTMODELERS_TOKEN`, never written out |
 | `BOARD_ID` | `x-board-id` | Target board UUID |
 | `ORG_ID` | — | Organization UUID (used in all board-scoped URLs) |
 | `BASE_URL` | — | Base URL, e.g. `http://localhost:3000` |
 
 Every API call in every skill must include these headers:
 ```
-x-token: <TOKEN>
+x-token: $EVENTMODELERS_TOKEN
 x-board-id: <BOARD_ID>
 x-user-id: <skill-name>   ← set by each skill individually
 ```
 
 All board-scoped URLs follow the pattern: `<BASE_URL>/api/org/<ORG_ID>/boards/<BOARD_ID>/...`
+
+### The token never enters the conversation
+
+Never print, echo, `cat` or paste the token value — not in a reply, not in a command line. Commands
+reference it as `$EVENTMODELERS_TOKEN` inside double quotes, and the shell expands it:
+
+- The build-kit loop starts Claude with `EVENTMODELERS_TOKEN` already set from the kit config.
+- In an interactive session where it is not set, prefix each API call so the shell reads it from the
+  config file itself: `EVENTMODELERS_TOKEN="$(node -p "require('./.eventmodelers/config.json').token")" curl ...`
+
+Check whether it is set without revealing it:
+
+```bash
+[ -n "$EVENTMODELERS_TOKEN" ] && echo "token: from environment" || echo "token: not in environment"
+```
 
 ---
 
@@ -38,11 +53,10 @@ Before reading the config file, scan the prompt/arguments that invoked this skil
 | Pattern | Example |
 |---------|---------|
 | `board=<uuid>` | `board=05cda19d-d5b8-4b51-ae88-c72f2611548a` |
-| `token=<uuid>` | `token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
 | `org=<uuid>` | `org=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
 | `baseUrl=<url>` | `baseUrl=http://localhost:3000` |
 
-If an inline `board=<uuid>` is found, use it as `BOARD_ID` — **it takes priority over the config file**. Same for `token`, `org`, and `baseUrl`. Record which values came from inline params so they are not overwritten in Step 3.
+If an inline `board=<uuid>` is found, use it as `BOARD_ID` — **it takes priority over the config file**. Same for `org` and `baseUrl`. A token is never passed inline; if a prompt contains one, ignore it and do not repeat it. Record which values came from inline params so they are not overwritten in Step 3.
 
 ---
 
@@ -51,13 +65,13 @@ If an inline `board=<uuid>` is found, use it as `BOARD_ID` — **it takes priori
 Check whether `.eventmodelers/config.json` exists in the current working directory:
 
 ```bash
-cat .eventmodelers/config.json 2>/dev/null
+node -e "const c=require('./.eventmodelers/config.json'); console.log(JSON.stringify({...c, token: c.token ? '<set>' : undefined}))" 2>/dev/null
 ```
 
-If the file exists and is valid JSON, extract any values **not already set by Step 0**:
-- `token` → `TOKEN`
+This prints the config with the token masked. If the file exists and is valid JSON, extract any values **not already set by Step 0**:
+- `token` → present or missing (the value stays in the file)
 - `boardId` → `BOARD_ID`
-- `organizationId` → `ORG_ID`
+- `organizationId` → `ORG_ID` (read `orgId` as a fallback for configs written by older versions of this skill)
 - `baseUrl` → `BASE_URL` (default: `https://api.eventmodelers.ai` if missing)
 
 Resolution priority: **inline param > config file > ask user**
@@ -79,13 +93,13 @@ Stop asking questions. Show this hint and wait for them to paste:
 
 When they paste a JSON object, parse it immediately — accept both `orgId` and `organizationId` as the organization field — apply all values, and proceed directly to Step 3.
 
-**If the user answers no** (or pastes only a partial config), ask for each still-missing field one at a time, in this order: `token`, then `boardId`, then `orgId`. Wait for the answer before asking the next.
+**If the user answers no** (or pastes only a partial config), ask for each still-missing field one at a time, in this order: `token`, then `boardId`, then `organizationId`. Wait for the answer before asking the next.
 
 | Field | What to ask |
 |-------|-------------|
 | `token` | "Please provide your eventmodelers API token (a UUID from your workspace settings)." |
 | `boardId` | "Please provide the board ID you want to work with (the UUID from the board URL)." |
-| `orgId` | "Please provide your organization ID (the UUID from your organization settings)." |
+| `organizationId` | "Please provide your organization ID (the UUID from your organization settings)." |
 | `baseUrl` | Do **not** ask — default to `https://api.eventmodelers.ai` silently. |
 
 Where to find the token: users generate API tokens in their workspace settings at the eventmodelers platform. The token is shown only once at creation time. It is a UUID and must belong to the same organization as the board.
@@ -102,7 +116,7 @@ mkdir -p .eventmodelers
 {
   "token": "<TOKEN>",
   "boardId": "<BOARD_ID>",
-  "orgId": "<ORG_ID>",
+  "organizationId": "<ORG_ID>",
   "baseUrl": "<BASE_URL>"
 }
 EOF
@@ -134,7 +148,7 @@ Confirm the token and board are valid with a lightweight call:
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}" \
-  -H "x-token: <TOKEN>" \
+  -H "x-token: $EVENTMODELERS_TOKEN" \
   -H "x-board-id: <BOARD_ID>" \
   -H "x-user-id: connect-skill" \
   "<BASE_URL>/api/org/<ORG_ID>/boards/<BOARD_ID>/nodes?type=CHAPTER"
@@ -157,12 +171,12 @@ curl -s -o /dev/null -w "%{http_code}" \
 {
   "token": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "boardId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-  "orgId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "organizationId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "baseUrl": "http://localhost:3000"
 }
 ```
 
-The `token` field is a secret. It is never logged or shown after initial confirmation.
+The `token` field is a secret. It is never logged, shown, or written into a prompt or command line.
 
 ---
 

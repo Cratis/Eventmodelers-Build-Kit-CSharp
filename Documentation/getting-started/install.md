@@ -46,8 +46,8 @@ The first prompt is `Do you have platform credentials from app.eventmodelers.ai/
 
 | Starting point | What to do |
 |---|---|
-| Fresh directory, entering new credentials | Answer **no** (`n`), then enter **Organization ID**, **Board ID**, and **Token** from [your account](https://app.eventmodelers.ai/account). The installer writes both config files, but does not add `baseUrl`. Complete them below. |
-| Fresh directory, pasting an existing account config | Answer **yes** (`y`). The installer prints the project-root config path and exits. Apply the token-file protection below, paste your account config into `.eventmodelers/config.json`, then rerun the same install command. On the rerun, answer **no** (`n`) so it reads the saved config and configures MCP. If the three credential fields are complete, it skips **both** config writes: you must create the kit-local copy below yourself. |
+| Fresh directory, entering new credentials | Answer **no** (`n`), then enter **Organization ID**, **Board ID**, and **Token** from [your account](https://app.eventmodelers.ai/account). Press Enter at **API base URL** to keep the hosted platform (`https://api.eventmodelers.ai`), or type another. The installer writes all four fields to both config files. |
+| Fresh directory, pasting an existing account config | Answer **yes** (`y`). The installer prints the project-root config path and exits. Apply the token-file protection below, paste your account config into `.eventmodelers/config.json`, then rerun the same install command. On the rerun, answer **no** (`n`) so it reads the saved config and configures MCP. If the three credential fields are complete, it does not prompt again: it adds a missing `baseUrl`, renames an older `orgId` field to `organizationId`, and fills any field missing from the kit-local copy from the root config. |
 | Existing repository | Use the same credential choices above. If a root config is already present, answer **no** (`n`) to read it; missing credentials prompt for input. Your existing ignore rules are kept, so just run the ignore check below, and complete both config files below. |
 
 Answering yes always exits before reading the saved config or configuring MCP. When prompted for individual fields, Enter leaves an existing value unchanged or skips a missing one. You can connect later, but complete all four fields below before following this board-driven walkthrough.
@@ -70,9 +70,9 @@ GIT_OPTIONAL_LOCKS=0 git --no-optional-locks -c core.fsmonitor=false check-ignor
 
 The command must print both paths before you proceed. An ignore rule does not protect an already tracked file; if either path is missing from the output, resolve that before committing or launching the agent.
 
-### Complete both config files for every path
+### Check both config files
 
-After the final installer run, edit `.eventmodelers/config.json` in the project root so it contains all four fields. Replace the placeholder values with your own credentials; the hosted API URL is shown below:
+After the final installer run, both `.eventmodelers/config.json` in the project root and `.build-kit/.eventmodelers/config.json` contain all four fields. `baseUrl` defaults to the hosted platform; set `BASE_URL` when running the installer, or answer the **API base URL** prompt, to use another. The kit-local file also holds `codeExportSecret` for the code export server:
 
 ```json
 {
@@ -83,13 +83,7 @@ After the final installer run, edit `.eventmodelers/config.json` in the project 
 }
 ```
 
-Then copy that complete config into the kit-local path, even if the installer already created a copy:
-
-```bash
-cp .eventmodelers/config.json .build-kit/.eventmodelers/config.json
-```
-
-The installer creates both parent directories. The loop reads **only** `.build-kit/.eventmodelers/config.json` and requires `organizationId`, `boardId`, `token`, and `baseUrl` there for board sync. It does not fall back to the root config or supply a default API URL. Missing values select local-only mode, not board sync.
+The loop reads **only** `.build-kit/.eventmodelers/config.json` and requires `organizationId`, `boardId`, `token`, and `baseUrl` there for board sync. It reads `orgId` as a fallback for configs written by older versions of `/connect`. When a field is missing, the loop prints which one and runs local-only until you add it and restart.
 
 Check that `.build-kit/.claude/settings.json` contains `mcpServers.eventmodelers` with `type: "http"` and a `url` matching your `baseUrl` followed by `/mcp`. If your account config uses a different API URL, keep it consistent in both config files and this MCP setting. Repeat the ignore check above after the final run, and keep both config copies in sync when you change boards or credentials.
 
@@ -141,7 +135,7 @@ Open `http://localhost:9000` to check the starter app before launching the agent
 
 ### Start the Claude loop
 
-Review the installed changes before giving the agent control of the project. The launcher uses `--dangerously-skip-permissions`, and the build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify. A board that already has `Planned` slices can trigger work as soon as the loop starts.
+Review the installed changes before giving the agent control of the project. The launcher runs Claude with an explicit allow list: file edits are accepted inside the project only, and the agent may run only `dotnet build`/`test`/`restore`, the `git` commands for its branch policy (no push, reset or rebase), `yarn install`/`build`/`lint`/`test`, and `curl` for the board API. A command outside the list is refused, and the slice is reported as blocked. To allow more, add entries to `allowedTools` in `.build-kit/.eventmodelers/config.json` or to the comma-separated `RALPH_ALLOWED_TOOLS` environment variable (for example `Bash(npm run build:*)`); entries that bypass permission checks are refused. The build instructions tell the agent to commit changes and merge its feature branch back to `main`; use a working copy whose files and Git history you intend the agent to modify. A board that already has `Planned` slices can trigger work as soon as the loop starts.
 
 Start one Claude loop in a separate terminal from the project root and leave its output visible:
 
@@ -151,11 +145,7 @@ node .build-kit/ralph-claude.js
 
 Check the startup output for your organization, board, and API URL. If it says `mode: local-only (no platform sync)`, stop the loop, complete the four fields in the kit-local config, and restart it. Local file checks alone do not verify the connection; watch for platform errors and board subscription output before continuing to the first slice.
 
-The local Ollama launcher is a separate alternative, not an additional process to run alongside Claude. Start `ollama serve` first. This walkthrough follows Claude; the Ollama launcher does not register the same planned-slice callback:
-
-```bash
-OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js
-```
+Building slices needs Claude Code: local models (Ollama) are not supported. Earlier versions shipped an Ollama launcher, but it could not read the tasks the loop writes and had no way to build a planned slice, so it was removed.
 
 ## Next Steps
 

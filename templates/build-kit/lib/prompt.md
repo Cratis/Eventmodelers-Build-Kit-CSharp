@@ -44,34 +44,12 @@ Run `/load-slice sliceId=<payload.sliceId>` to fetch full slice details (title, 
 
 Inspect the `sliceStatus` in the payload:
 
-#### `Planned` — build the slice
-
-This is the build trigger. Setting `InProgress` and building are one atomic step:
-
-1. Immediately call `/update-slice-status` to set the slice to `InProgress` on the board.
-
-2. Read the slice definition from `.build-kit/.slices/<contextSlug>/<sliceFolder>/slice.json` (written by `/load-slice`).
-
-3. Determine the **slice type** from the slice.json:
-   - **Translation** — `sliceType === "TRANSLATION"` → read `description` and `notes` from slice.json for hints; default to `/build-automation` if nothing else is specified
-   - **Automation** — `processors` array is non-empty → invoke `/build-automation`
-   - **State-view** — `projections` or `queries` array is non-empty → invoke `/build-state-view`
-   - **State-change** — default (has `commands` / `events`) → invoke `/build-state-change`
-
-4. Invoke the matching skill and follow its instructions **completely**. Do NOT implement the slice manually.
-
-5. **Verify against slice.json**: Cross-check the implementation — every command field, event field, and specification in slice.json must appear in the code. No invented fields — if it is not in slice.json, it must not be in the code.
-
-6. Run quality checks (from the project root — `dotnet build` also regenerates the TypeScript proxies the frontend depends on):
-   - Build: `dotnet build`  (zero warnings, zero errors)
-   - Test (slice only): `dotnet test --filter "FullyQualifiedName~<SliceName>"`
-
-7. If checks pass, Stage only the files that belong to this slice by explicit path (`git add <path> ...`) — never `git add -A`, `git add .` or `git commit -a`. Never stage `.eventmodelers/`, `.env*`, key files or credential files. Run `git status` and check the staged list before committing, then commit with message: `feat: [Slice Name]`.
-
-8. Call `/update-slice-status` to set the slice to `Done` on the board.
+#### `Planned`
+Planned slices are claimed and built by the loop itself, which also sets their final status. Log the
+transition in `progress.txt` and take no build action — never set a slice's status yourself.
 
 #### `InProgress`
-Another agent is already building this slice. Log it and skip — do not build.
+A loop is already building this slice. Log it and skip — do not build.
 
 #### `Done`
 Summarize what was completed and update `progress.txt`.
@@ -117,8 +95,15 @@ If `.build-kit/tasks.json` is empty (`[]`) or does not exist, reply with:
 
 After completing a task, add any **reusable** learnings to `AGENT.md` — patterns, gotchas, API quirks, or skill behaviour that future iterations should know. Only add things that are general and applicable beyond this single task. Do not duplicate what is already there.
 
+## Permissions
+
+You run with an explicit allow list. If a command you need is refused by the permission system, do not
+work around it. Log the refused command in `progress.txt`, remove the task from `tasks.json`, and reply
+`<promise>BLOCKED: <the refused command></promise>`.
+
 ## Important
 
 - Process **one task per iteration**.
 - Read `AGENT.md` first — it contains patterns from previous iterations.
 - Always start with `/connect` if credentials are not yet loaded.
+- A task turn does not build or commit code. If you ever stage a file, stage it by explicit path (`git add <path>`) — never `git add -A` or `git add .`. Never stage `.eventmodelers/`, `.env*`, key files or credential files.

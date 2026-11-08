@@ -26,7 +26,7 @@ If neither is provided, load and persist all slices without filtering.
 
 ```bash
 curl -s \
-  -H "x-token: <TOKEN>" \
+  -H "x-token: $EVENTMODELERS_TOKEN" \
   -H "x-board-id: <BOARD_ID>" \
   -H "x-user-id: load-slice-skill" \
   "<BASE_URL>/api/org/<ORG_ID>/boards/<BOARD_ID>/slicedata/slices"
