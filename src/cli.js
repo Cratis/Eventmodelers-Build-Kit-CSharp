@@ -254,10 +254,8 @@ program
 
     console.log('\n✅ Done!\n');
     console.log('Next steps:\n');
-    console.log('  Claude (default):');
+    console.log('  Run the loop with Claude:');
     console.log('       node .build-kit/ralph-claude.js\n');
-    console.log('  Local Ollama model (run `ollama serve` first):');
-    console.log('       OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js\n');
     console.log('  Pass a custom project directory as the first argument:');
     console.log('       node .build-kit/ralph-claude.js /path/to/project\n');
     console.log('Skills are ready in .build-kit/.claude/skills/ — use /connect to set a board ID.');

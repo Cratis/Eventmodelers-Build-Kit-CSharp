@@ -68,7 +68,6 @@ These aren't CLI subcommands — they're the scripts `install` copies into `.bui
 | Script | Purpose |
 |---|---|
 | `node .build-kit/ralph-claude.js` | Run the loop with Claude (default) |
-| `OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js` | Run the loop with a local Ollama model (`ollama serve` must be running) |
 | `node .build-kit/ralph-claude.js /path/to/project` | Point the loop at a project directory other than the kit's parent |
 
 For a first run, follow [Run Your First Slice](../getting-started/first-slice.md). See [Understanding the Loop](../understand/the-loop.md) for how the running loop selects work.

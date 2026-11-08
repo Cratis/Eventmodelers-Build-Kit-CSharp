@@ -145,11 +145,7 @@ node .build-kit/ralph-claude.js
 
 Check the startup output for your organization, board, and API URL. If it says `mode: local-only (no platform sync)`, stop the loop, complete the four fields in the kit-local config, and restart it. Local file checks alone do not verify the connection; watch for platform errors and board subscription output before continuing to the first slice.
 
-The local Ollama launcher is a separate alternative, not an additional process to run alongside Claude. Start `ollama serve` first. This walkthrough follows Claude; the Ollama launcher does not register the same planned-slice callback:
-
-```bash
-OLLAMA_MODEL=qwen3:8b node .build-kit/ralph-ollama.js
-```
+Building slices needs Claude Code: local models (Ollama) are not supported. Earlier versions shipped an Ollama launcher, but it could not read the tasks the loop writes and had no way to build a planned slice, so it was removed.
 
 ## Next Steps
 

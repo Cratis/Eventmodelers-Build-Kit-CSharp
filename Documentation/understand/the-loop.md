@@ -6,7 +6,7 @@ tableOfContents: false
 
 # The Loop and Triggers
 
-The kit runs as a long-lived agent loop (`ralph-claude.js` / `ralph-ollama.js`) that repeatedly checks for work and idles quietly when there is none. It implements the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits/tree/main/eventmodelers-cli/shared/build-kit).
+The kit runs as a long-lived agent loop (`ralph-claude.js`, using Claude Code; local models are not supported for building) that repeatedly checks for work and idles quietly when there is none. It implements the [Eventmodelers Build Kits platform contract](https://github.com/Nebulit-GmbH/Eventmodelers-Build-Kits/tree/main/eventmodelers-cli/shared/build-kit).
 
 ## Two independent triggers
 
