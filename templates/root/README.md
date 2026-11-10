@@ -4,7 +4,7 @@ A web application built with Cratis Arc and Chronicle.
 
 ## Prerequisites
 
-- .NET 9.0 or later
+- .NET 11 SDK
 - Docker and Docker Compose (for running Chronicle and Aspire Dashboard)
 - Node.js 20 or later
 - A package manager (yarn, pnpm, or npm)
