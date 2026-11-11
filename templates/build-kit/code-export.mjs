@@ -117,6 +117,130 @@ function gitCommit(path, message, files) {
     }
 }
 
+function exportFileName(config, req) {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const exportAsConfig = urlObj.searchParams.get("exportAsConfig") === "true";
+    let fileName = "config.json";
+
+    if (exportAsConfig) {
+        fileName = "config.json";
+    } else if (config.context) {
+        fileName = slugify(config.context) + ".json";
+    }
+    return fileName;
+}
+
+function readSliceIndices(indexFile) {
+    if (!existsSync(indexFile)) return { slices: [] };
+    try {
+        return JSON.parse(readFileSync(indexFile, 'utf-8'));
+    } catch {
+        return { slices: [] };
+    }
+}
+
+function sliceGroupMap(sliceGroups) {
+    const sliceToGroupMap = new Map();
+    if (!sliceGroups) return sliceToGroupMap;
+    sliceGroups.forEach((group) => {
+        if (group.sliceIds) {
+            group.sliceIds.forEach((sliceId) => {
+                sliceToGroupMap.set(sliceId, group.id);
+            });
+        }
+    });
+    return sliceToGroupMap;
+}
+
+function writeSlice(slice, baseFolder, sliceToGroupMap, sliceIndices) {
+    const sliceFolder = slice.title?.replaceAll(" ", "")?.replaceAll("slice:", "")?.toLowerCase();
+    const folder = join(baseFolder, sliceFolder);
+
+    if (!existsSync(folder)) {
+        mkdirSync(folder, { recursive: true });
+    }
+
+    const filePath = join(folder, 'slice.json');
+    const sliceData = { ...slice };
+    delete sliceData.index;
+
+    // Add group ID to slice data if it belongs to a group
+    const groupId = sliceToGroupMap.get(slice.id);
+    if (groupId) {
+        sliceData.group = groupId;
+    }
+
+    writeFileSync(filePath, JSON.stringify(sliceData, null, 2));
+
+    const sliceIndex = {
+        id: slice.id,
+        slice: slice.title,
+        index: slice.index,
+        context: slice.context ?? "default",
+        folder: sliceFolder,
+        status: slice.status,
+    };
+    // Add group ID to index entry if it belongs to a group
+    if (groupId) {
+        sliceIndex.group = groupId;
+    }
+
+    const sliceId = sliceIndices.slices.findIndex(it => it.slice == slice.title);
+    if (sliceId == -1) {
+        sliceIndices.slices.push(sliceIndex);
+    } else {
+        sliceIndices.slices[sliceId] = {...sliceIndices.slices[sliceId], ...sliceIndex, assigned: undefined};
+    }
+}
+
+function writeSliceImages(sliceImages) {
+    if (!sliceImages) return;
+    sliceImages.forEach((sliceImage) => {
+        const sliceFolder = sliceImage.slice?.replaceAll(" ", "")?.replaceAll("slice:", "")?.toLowerCase();
+        const folder = join(SLICES_DIR, sliceImage.context ?? "default", sliceFolder);
+
+        if (!existsSync(folder)) {
+            mkdirSync(folder, { recursive: true });
+        }
+
+        const base64String = sliceImage.base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+        const buffer = Buffer.from(base64String, 'base64');
+        const filePath = join(folder, `screen-${sliceImage.id}.png`);
+        writeFileSync(filePath, buffer);
+    });
+}
+
+function deleteCodeSliceFile(fullPath, targetId) {
+    try {
+        const codeSliceContent = readFileSync(fullPath, 'utf-8');
+        const codeSlice = JSON.parse(codeSliceContent);
+        if (codeSlice.id === targetId) {
+            unlinkSync(fullPath);
+            return { found: true, deletedPath: fullPath };
+        }
+    } catch (error) {
+        console.error(`Error reading code-slice.json at ${fullPath}:`, error);
+    }
+    return { found: false };
+}
+
+function findAndDeleteCodeSliceById(dir, targetId) {
+    if (!existsSync(dir)) return { found: false };
+    const entries = readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            const result = findAndDeleteCodeSliceById(fullPath, targetId);
+            if (result.found) return result;
+        } else if (entry.name === 'code-slice.json') {
+            const result = deleteCodeSliceFile(fullPath, targetId);
+            if (result.found) return result;
+        }
+    }
+    return { found: false };
+}
+
 // ---------------------------------------
 // Server
 // ---------------------------------------
@@ -151,15 +275,7 @@ const server = createServer(async (req, res) => {
         req.on('end', () => {
             try {
                 const config = JSON.parse(body);
-                const urlObj = new URL(req.url, `http://${req.headers.host}`);
-                const exportAsConfig = urlObj.searchParams.get("exportAsConfig") === "true";
-                let fileName = "config.json";
-
-                if (exportAsConfig) {
-                    fileName = "config.json";
-                } else if (config.context) {
-                    fileName = slugify(config.context) + ".json";
-                }
+                const fileName = exportFileName(config, req);
 
                 writeFileSync(join(ROOT, fileName), JSON.stringify(config, null, 2));
                 console.log(`✅ ${fileName} written to ${ROOT}`);
@@ -179,69 +295,13 @@ const server = createServer(async (req, res) => {
                 console.log(`✅ current_context.json updated with context: ${contextName}`);
 
                 const indexFile = join(baseFolder, 'index.json');
-                let sliceIndices = { slices: [] };
-                if (existsSync(indexFile)) {
-                    try {
-                        sliceIndices = JSON.parse(readFileSync(indexFile, 'utf-8'));
-                    } catch {
-                        sliceIndices = { slices: [] };
-                    }
-                }
+                const sliceIndices = readSliceIndices(indexFile);
 
                 // Write all slices
                 if (config.slices) {
                     // Build a map of slice ID to group ID from sliceGroups
-                    const sliceToGroupMap = new Map();
-                    if (config.sliceGroups) {
-                        config.sliceGroups.forEach((group) => {
-                            if (group.sliceIds) {
-                                group.sliceIds.forEach((sliceId) => {
-                                    sliceToGroupMap.set(sliceId, group.id);
-                                });
-                            }
-                        });
-                    }
-
-                    config.slices.forEach((slice) => {
-                        const sliceFolder = slice.title?.replaceAll(" ", "")?.replaceAll("slice:", "")?.toLowerCase();
-                        const folder = join(baseFolder, sliceFolder);
-
-                        if (!existsSync(folder)) {
-                            mkdirSync(folder, { recursive: true });
-                        }
-
-                        const filePath = join(folder, 'slice.json');
-                        const sliceData = { ...slice };
-                        delete sliceData.index;
-
-                        // Add group ID to slice data if it belongs to a group
-                        const groupId = sliceToGroupMap.get(slice.id);
-                        if (groupId) {
-                            sliceData.group = groupId;
-                        }
-
-                        writeFileSync(filePath, JSON.stringify(sliceData, null, 2));
-
-                        const sliceIndex = {
-                            id: slice.id,
-                            slice: slice.title,
-                            index: slice.index,
-                            context: slice.context ?? "default",
-                            folder: sliceFolder,
-                            status: slice.status,
-                        };
-                        // Add group ID to index entry if it belongs to a group
-                        if (groupId) {
-                            sliceIndex.group = groupId;
-                        }
-
-                        const sliceId = sliceIndices.slices.findIndex(it => it.slice == slice.title);
-                        if (sliceId == -1) {
-                            sliceIndices.slices.push(sliceIndex);
-                        } else {
-                            sliceIndices.slices[sliceId] = {...sliceIndices.slices[sliceId], ...sliceIndex, assigned: undefined};
-                        }
-                    });
+                    const sliceToGroupMap = sliceGroupMap(config.sliceGroups);
+                    config.slices.forEach((slice) => writeSlice(slice, baseFolder, sliceToGroupMap, sliceIndices));
                     writeFileSync(indexFile, JSON.stringify(sliceIndices, null, 2));
 
                     // Write context.json
@@ -255,21 +315,7 @@ const server = createServer(async (req, res) => {
                 }
 
                 // Write slice images
-                if (config.sliceImages) {
-                    config.sliceImages.forEach((sliceImage) => {
-                        const sliceFolder = sliceImage.slice?.replaceAll(" ", "")?.replaceAll("slice:", "")?.toLowerCase();
-                        const folder = join(SLICES_DIR, sliceImage.context ?? "default", sliceFolder);
-
-                        if (!existsSync(folder)) {
-                            mkdirSync(folder, { recursive: true });
-                        }
-
-                        const base64String = sliceImage.base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
-                        const buffer = Buffer.from(base64String, 'base64');
-                        const filePath = join(folder, `screen-${sliceImage.id}.png`);
-                        writeFileSync(filePath, buffer);
-                    });
-                }
+                writeSliceImages(config.sliceImages);
 
                 sendJSON(res, { success: true, path: join(ROOT, fileName) });
             } catch (err) {
@@ -450,31 +496,6 @@ const server = createServer(async (req, res) => {
 
                 if (!sliceId) {
                     return sendJSON(res, { error: 'Missing required parameter: id' }, 400);
-                }
-
-                function findAndDeleteCodeSliceById(dir, targetId) {
-                    if (!existsSync(dir)) return { found: false };
-                    const entries = readdirSync(dir, { withFileTypes: true });
-
-                    for (const entry of entries) {
-                        const fullPath = join(dir, entry.name);
-                        if (entry.isDirectory()) {
-                            const result = findAndDeleteCodeSliceById(fullPath, targetId);
-                            if (result.found) return result;
-                        } else if (entry.name === 'code-slice.json') {
-                            try {
-                                const codeSliceContent = readFileSync(fullPath, 'utf-8');
-                                const codeSlice = JSON.parse(codeSliceContent);
-                                if (codeSlice.id === targetId) {
-                                    unlinkSync(fullPath);
-                                    return { found: true, deletedPath: fullPath };
-                                }
-                            } catch (error) {
-                                console.error(`Error reading code-slice.json at ${fullPath}:`, error);
-                            }
-                        }
-                    }
-                    return { found: false };
                 }
 
                 if (!existsSync(SLICES_DIR)) {
