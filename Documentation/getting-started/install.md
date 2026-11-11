@@ -17,7 +17,7 @@ Before installing, choose the project directory the kit should write into and ma
 - **Git** installed with your commit author identity configured, and a project repository with an initial commit on `main`
 - **Eventmodelers account** with at least one board ([Sign up](https://app.eventmodelers.ai/account))
 
-To build and run the C# starter below, also install the .NET 10 SDK and Docker with Compose v2 support (`docker compose`). The starter targets .NET 10; its Compose file supplies the Chronicle development kernel and Aspire Dashboard.
+To build and run the C# starter below, also install the .NET 11 SDK and Docker with Compose v2 support (`docker compose`). The starter targets .NET 11; its Compose file supplies the Chronicle development kernel and Aspire Dashboard.
 
 The installer does not initialize a Git repository or create `main`. In a fresh project directory, run these commands before installing:
 
