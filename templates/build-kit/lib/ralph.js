@@ -45,6 +45,19 @@ async function writeTask(payload, kitDir) {
   console.log(`[agent] Task written — slice="${payload.sliceTitle}" status="${payload.sliceStatus}"`);
 }
 
+async function pingAgent(cfg, realtimeToken) {
+  try {
+    const res = await fetch(`${cfg.baseUrl}/api/agent-alive`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${realtimeToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: cfg.token }),
+    });
+    if (!res.ok) console.error(`[agent] Ping failed: ${res.status}`);
+  } catch (err) {
+    console.error('[agent] Ping error:', err);
+  }
+}
+
 async function startRealtimeAgent(cfg, kitDir) {
   const { createClient } = await import('@supabase/supabase-js');
   const board = boardClient(cfg);
@@ -92,18 +105,7 @@ async function startRealtimeAgent(cfg, kitDir) {
     }
   }, 10 * 60 * 1000);
 
-  const ping = async () => {
-    try {
-      const res = await fetch(`${cfg.baseUrl}/api/agent-alive`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${realtimeToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: cfg.token }),
-      });
-      if (!res.ok) console.error(`[agent] Ping failed: ${res.status}`);
-    } catch (err) {
-      console.error('[agent] Ping error:', err);
-    }
-  };
+  const ping = async () => pingAgent(cfg, realtimeToken);
   await ping();
   setInterval(ping, 30_000);
 }
@@ -155,6 +157,17 @@ async function runTask(kitDir, onTask, prompt, settings) {
   console.error(`[ralph] Dropped task ${dropped?.id} (slice "${dropped?.payload?.sliceTitle}") after ${settings.maxAttempts} failed turns`);
 }
 
+async function runPlannedSlice(planned, context, credentialed, backendPromptFile) {
+  console.log(`[ralph] onPlannedSlice: building slice "${planned.slice}"...`);
+  const result = await buildPlannedSlice({
+    entry: planned,
+    ...context,
+    prompt: readFileSync(backendPromptFile, 'utf-8'),
+  });
+  if (credentialed) await persistSlices(context.board, context.kitDir).catch(() => {});
+  if (result.status === 'Retry') await sleep(context.settings.retryDelayMs);
+}
+
 async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
   const promptFile = join(kitDir, 'lib', 'prompt.md');
   const backendPromptFile = join(kitDir, 'lib', 'backend-prompt.md');
@@ -163,6 +176,7 @@ async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
   const settings = loopSettings(cfg);
   const attempts = new BuildAttempts(join(kitDir, 'build-attempts.json'));
   const agentId = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
+  const buildContext = { kitDir, board, attempts, settings, runTurn: onPlannedSlice, agentId, sleep };
 
   while (true) {
     let didWork = false;
@@ -176,20 +190,7 @@ async function ralphLoop(kitDir, cfg, onTask, onPlannedSlice) {
     // A slice that used up its attempts is skipped even if a Blocked update did not reach the board
     const planned = onPlannedSlice && findPlannedSlice(kitDir, (entry) => attempts.count(entry.id) < settings.maxAttempts);
     if (planned) {
-      console.log(`[ralph] onPlannedSlice: building slice "${planned.slice}"...`);
-      const result = await buildPlannedSlice({
-        entry: planned,
-        kitDir,
-        board,
-        attempts,
-        settings,
-        runTurn: onPlannedSlice,
-        prompt: readFileSync(backendPromptFile, 'utf-8'),
-        agentId,
-        sleep,
-      });
-      if (credentialed) await persistSlices(board, kitDir).catch(() => {});
-      if (result.status === 'Retry') await sleep(settings.retryDelayMs);
+      await runPlannedSlice(planned, buildContext, credentialed, backendPromptFile);
       didWork = true;
     }
 

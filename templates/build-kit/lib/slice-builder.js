@@ -35,6 +35,10 @@ async function tryBoard(log, label, action) {
   }
 }
 
+function isPlanned(slice) {
+  return slice && (slice.status || '').toLowerCase() === 'planned';
+}
+
 /**
  * Claims the slice on the board: it must still be Planned, and after setting InProgress with this
  * agent's id, the board must still name this agent once concurrent claims have settled.
@@ -42,7 +46,7 @@ async function tryBoard(log, label, action) {
  */
 export async function claimSlice(board, entry, agentId, { sleep, claimSettleMs }) {
   const current = (await board.listSlices()).find((slice) => slice.id === entry.id);
-  if (!current || (current.status || '').toLowerCase() !== 'planned') {
+  if (!isPlanned(current)) {
     return { reason: `no longer Planned (${current?.status ?? 'removed'})`, status: current?.status ?? 'Removed' };
   }
   await board.setSliceStatus(entry.id, 'InProgress', { buildClaim: agentId });
@@ -74,6 +78,15 @@ async function fail(context, reason) {
   return { status: 'Retry', reason };
 }
 
+async function runBuildTurn({ runTurn, prompt, entry, attempt, settings }) {
+  try {
+    const output = await runTurn(`${prompt}\n\n${buildRequest(entry, attempt, settings.maxAttempts)}`, { timeoutMs: settings.turnTimeoutMs });
+    return turnOutcome(output);
+  } catch (err) {
+    return { failure: err.message };
+  }
+}
+
 /**
  * Builds one planned slice. `board` is null in local-only mode. `runTurn(input, { timeoutMs })`
  * resolves with the turn's output or rejects (failure, timeout). Returns { status, reason }.
@@ -102,13 +115,7 @@ export async function buildPlannedSlice({ entry, kitDir, board, attempts, settin
   setLocalStatus(kitDir, entry, 'InProgress');
 
   const attempt = attempts.count(entry.id) + 1;
-  let outcome;
-  try {
-    const output = await runTurn(`${prompt}\n\n${buildRequest(entry, attempt, settings.maxAttempts)}`, { timeoutMs: settings.turnTimeoutMs });
-    outcome = turnOutcome(output);
-  } catch (err) {
-    outcome = { failure: err.message };
-  }
+  const outcome = await runBuildTurn({ runTurn, prompt, entry, attempt, settings });
 
   if (outcome.blocked) return block(context, outcome.blocked);
   if (outcome.failure) return fail(context, outcome.failure);

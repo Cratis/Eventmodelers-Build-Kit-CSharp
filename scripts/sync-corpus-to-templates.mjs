@@ -20,6 +20,23 @@ function readManifest() {
   return JSON.parse(readFileSync(corpusManifest, 'utf-8'));
 }
 
+function skillConventions(skillsDir) {
+  if (!existsSync(skillsDir)) return '';
+
+  let content = '';
+  for (const skill of readdirSync(skillsDir)) {
+    const skillPath = join(skillsDir, skill);
+    if (!existsSync(skillPath)) continue;
+
+    content += `\n## ${skill}\n\n`;
+    const skillFile = join(skillsDir, skill, 'SKILL.md');
+    if (existsSync(skillFile)) {
+      content += readFileSync(skillFile, 'utf-8');
+    }
+  }
+  return content;
+}
+
 function generateCratisConventions(manifest) {
   const profiles = manifest.profiles || [];
   const harnesses = manifest.harnesses || [];
@@ -41,20 +58,7 @@ Generated from the Cratis AI corpus.
 
 `;
 
-  const skillsDir = join(corpusSource, 'skills');
-  if (existsSync(skillsDir)) {
-    const skills = readdirSync(skillsDir);
-    for (const skill of skills) {
-      const skillPath = join(skillsDir, skill);
-      if (existsSync(skillPath)) {
-        content += `\n## ${skill}\n\n`;
-        const skillFile = join(skillsDir, skill, 'SKILL.md');
-        if (existsSync(skillFile)) {
-          content += readFileSync(skillFile, 'utf-8');
-        }
-      }
-    }
-  }
+  content += skillConventions(join(corpusSource, 'skills'));
 
   return content;
 }

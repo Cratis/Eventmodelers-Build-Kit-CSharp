@@ -13,6 +13,18 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+function assertTemplateItems(items, templateFolder, destination) {
+  items.forEach(item => {
+    const sourcePath = join(__dirname, '..', 'templates', templateFolder, item);
+
+    // After installation, target should exist
+    // This is verified by the actual install function
+    if (existsSync(sourcePath)) {
+      assert.ok(true, `${item} should be installed to ${destination}`);
+    }
+  });
+}
+
 describe('Installer Layout Contract (R2)', () => {
   let testDir;
 
@@ -83,34 +95,14 @@ describe('Installer Layout Contract (R2)', () => {
     // Verify templates/root/ contents are spread into project root
     const rootItems = ['package.json', 'README.md', 'appsettings.json'];
     
-    rootItems.forEach(item => {
-      const rootSourcePath = join(__dirname, '..', 'templates', 'root', item);
-      const rootTargetPath = join(testDir, item);
-      
-      // Check if source exists
-      if (existsSync(rootSourcePath)) {
-        // After installation, target should exist
-        // This is verified by the actual install function
-        assert.ok(true, `${item} should be installed to project root`);
-      }
-    });
+    assertTemplateItems(rootItems, 'root', 'project root');
   });
 
   test('should install templates/build-kit/ to .build-kit/', () => {
     // Verify templates/build-kit/ contents are spread into .build-kit/
     const kitItems = ['ralph-claude.js', 'lib/'];
     
-    kitItems.forEach(item => {
-      const kitSourcePath = join(__dirname, '..', 'templates', 'build-kit', item);
-      const kitTargetPath = join(testDir, '.build-kit', item);
-      
-      // Check if source exists
-      if (existsSync(kitSourcePath)) {
-        // After installation, target should exist
-        // This is verified by the actual install function
-        assert.ok(true, `${item} should be installed to .build-kit/`);
-      }
-    });
+    assertTemplateItems(kitItems, 'build-kit', '.build-kit/');
   });
 
   test('should ignore node_modules, obj, bin, wwwroot, .vs directories', () => {
