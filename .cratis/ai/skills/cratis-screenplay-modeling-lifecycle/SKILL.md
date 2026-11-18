@@ -1,6 +1,6 @@
 ---
 name: cratis-screenplay-modeling-lifecycle
-description: "Model first: load before any Cratis application work where a Screenplay `.play` model is, or should become, the source of truth. Holds the model-first decision rule, modes, independent verdicts V1-V5, the P0-P9 phases with Input / Carry-forward / Gate, stop-or-assume, identity ownership, approvals, untrusted content, session state and handoffs, then routes to ONE phase skill. Not for: Screenplay syntax or the compiler (use `cratis-screenplay-toolchain`), a single construct (use the `cratis-screenplay-*` construct skills), or Chronicle runtime diagnosis (use `cratis-chronicle-cli-operations`)."
+description: Use before application work to determine model-first obligations, or when selecting a Screenplay phase, verdict, approval or handoff. Not for construct syntax alone or Chronicle runtime diagnosis.
 license: MIT
 metadata:
   cratis-hint-paths: "**/*.play"
@@ -26,6 +26,10 @@ an unproven pass.
    A direct user request to model a scope is consent for that scope. A committed model the project marks `modelFirst.frozen` in `.cratis/ai.json` is generated evidence, not opted in (reason `frozen-model`): read it, never regenerate or edit it unless the request names that `.play` path or model; a generic "regenerate all" skips it and says so. Run `scripts/model-first-status.mjs` from the repository with Node.js and Git:
    `node <skill-directory>/scripts/model-first-status.mjs [--root <repository-relative-dir>] [--json]`.
    Read-only roots: `--root`, configuration, then discovery from HEAD project paths (drafts only if none). Discovery prefers legacy `.cratis/screenplay/`, else the common folder, else `Source/`, `src/`, `Screenplay/`. It excludes hidden/build/docs/samples/examples/scratch/test fixtures from discovery and acceptance, including at `.`; explicit roots include everything beneath them.
+   This read-only opt-in detector is not MCP/CLI workspace discovery. For a new
+   workspace use [root selection](../cratis-screenplay-event-modeling/references/file-layout.md#locate-the-model):
+   code-only `Source/` or `src/` does not qualify; absent model/workspace state,
+   use repository-root `Screenplay/`.
    Output: root, reason, frozen marker, file counts, drafts, model changes and the resolved `process` block. Exits: **0 opted in**, **1 not opted in**, **2 could not run** (Git/configuration/arguments). Treat 2 as blocked, not code-first.
    Run `scripts/model-first-status.mjs --self-test` to plant and check verdict fixtures; it executes `scripts/model-first-self-test.mjs` and prints the checked count on success.
    Read `references/opt-in.md` when checking the project configuration mechanism.
@@ -42,9 +46,9 @@ an unproven pass.
 | Situation | Level | Where the work goes |
 |---|---|---|
 | An accepted model covers the scope | **Model** | Change the `.play`, verify V1-V3, review, then render or gap-fill |
-| Opted in, but this scope has no model yet | **Model** | New behavior starts in discovery, then slice design |
+| Opted in, but this scope has no model yet | **Model** | New behavior starts in discovery, then slice design; a new model's application root starts with `command reads protected` (omit it only when the reads are not admissible, PLAY0781/PLAY0786) |
 | A computed rule inside a modeled slice | **Model + code attachment** | `csharp`/`file` block; it binds only as the construct allows (`cratis-screenplay-model-authoring`) |
-| Scope Stage cannot render yet (Stage renders supported event-triggered Automation; Translate/captures and refused reactions remain gap-fill. Mixed effects stay one reaction, `STAGE-ESM-037`; a hand-written realization must prove retry safety) | **Gap-fill code** | Hand-written; the `.play` slice and specs are the contract. `cratis-screenplay-render-and-gap-fill` separates an authorized existing generated base from fully hand-written delivery |
+| Scope Stage cannot render yet (Stage renders supported event-triggered Automation and bounded source-event capture/outbound Translate paths; refused shapes remain gap-fill. Mixed effects stay one reaction, `STAGE-ESM-037`; a hand-written realization must prove retry safety) | **Gap-fill code** | Hand-written; the `.play` slice and specs are the contract. `cratis-screenplay-render-and-gap-fill` separates an authorized existing generated base from fully hand-written delivery |
 | Outside call, transport or credentials | **Adapter code** | `Customizations/` or the host, applying `cratis-engineering-effect-boundaries` |
 | Infrastructure, clients, framework-profile repositories, brownfield not opted in | **Code** | Arc, Chronicle, spec and React skills; trivial changes keep the proportional-delegation policy |
 
@@ -104,7 +108,11 @@ assume visibly unattended and never rerun completed phases.
 ## Run protocol: stop or assume
 1. **Start**: read STATE.md; check the source identity; load the phase skill before authoring
    or judging; read the slice, specs and skill fully before concluding something is missing.
-   Discover tool capabilities once per session (`cratis-screenplay-toolchain`). One brief per
+   Discover tool capabilities once per session (`cratis-screenplay-toolchain`). **A model older
+   than the compiler's major is migrated before any edit**: a Screenplay 5 model runs
+   `screenplay migrate <model-root> --from 5 --to 6` as its own change, then compiles clean.
+   Read `references/version-migration.md` when a model writes a retired form or the compiler
+   names `screenplay migrate`. One brief per
    turn, one closed outcome: `references/per-turn-protocol.md`. Read `references/per-turn-protocol.md` when running a long-lived or delegated session that receives one brief at a time.
 2. **Scope**: only the addresses and phase the brief names; other defects go in the packet.
    One authoring agent per model root; reviewers and explainers are read-only.
@@ -161,6 +169,7 @@ State lives in `.ai-work/screenplay/<model-slug>/STATE.md` (untracked, overwritt
 | Specifications and coverage | `cratis-screenplay-scenario-coverage` |
 | Critic review, business-question pass | `cratis-screenplay-model-review` |
 | Existing system into a model | `cratis-screenplay-legacy-extraction` |
+| Running system or executable into a model, without its source | `cratis-screenplay-reverse-engineering` |
 | Render, gap-fill, fallback, drift | `cratis-screenplay-render-and-gap-fill` |
 | Estimate, order or split delivery of an accepted model | `cratis-screenplay-delivery-planning` |
 

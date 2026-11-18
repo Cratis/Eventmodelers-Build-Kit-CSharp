@@ -12,6 +12,7 @@
 - Version and freshness
 - Responses and pre-generation boundaries
 - What the CLI and Stage realize
+- Create command with a generated identifier
 
 `generated` properties and `returns` bind/reference-execute (ESM v7).
 Concept generation strategies and whole-source freshness bind as ESM v15. The CLI and Stage
@@ -260,7 +261,11 @@ Stage emits strategy-specific `IGeneratable<T>.New()` factories over Fundamental
 checks atomically at append: a batch's scopes are checked once against the state before
 the batch, all or nothing, and a storage retry that renumbers the append checks them again. Generated rejection specs assert
 `ValidationResultReason.ConcurrencyViolation`, not Arc's message text. This is
-Stage's explicit realization, not a claim that Arc delivers the same guard.
+Stage's explicit realization and renderer-owned smoke coverage, not a claim that
+Arc delivers the same guard or an instruction to hand-write an application guard
+matrix. Application decisions use direct `Handle()`/validator calls with supplied
+state; the one cheap application-shape admission spec is their only decision-read
+obligation. See [specs.scenarios.csharp.md](../../../rules/specs.scenarios.csharp.md).
 Time-based factories use the command's receipt time through `IGeneratableInContext<T>`
 and `GenerationContext`, the same instant as `$context.occurred`.
 
@@ -305,3 +310,21 @@ assertions against captured values; v15 captures also check strategy shape.
 The in-memory Stage executor instead requires deterministic fixtures and returns
 Unsupported(IdentityAllocation) when missing. Build and run generated Debug
 specifications separately; source reading is not a render or runtime result.
+
+## Create command with a generated identifier
+
+```screenplay excerpt
+command RegisterOrganization
+  organizationId OrganizationId generated identifier
+  name           OrganizationName
+  produces event OrganizationRegistered
+    name OrganizationName = name
+  returns organizationId
+specification RegistersAnOrganization
+  when RegisterOrganization
+    for "11111111-1111-1111-1111-111111111111"
+    name = "Acme"
+  then OrganizationRegistered
+    for "11111111-1111-1111-1111-111111111111"
+    name = "Acme"
+```
