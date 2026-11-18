@@ -26,17 +26,34 @@
 - Formatting and recovery limits
 - Code attachments
 
-The standalone MCP server lists 46 tools from Screenplay 4.228.0 (including the MCP-Apps visualization tool); `tools/list` is the authority for the installed server, and the CLI-bundled MCP (`cratis screenplay mcp`) can be an older Screenplay that lacks newer tools.
+The standalone MCP server lists the tools in the pinned contract (including the MCP-Apps visualization tool, `migrate` and `list-storylines`); `tools/list` is the authority for the installed server, and the CLI-bundled MCP (`cratis screenplay mcp`) can be an older Screenplay that lacks newer tools.
 
 The supported CLI launch is `cratis screenplay mcp <model-root>`, or `cratis screenplay mcp`
-alone inside a project, where the CLI locates the model (the project's `.play` files, else
-`Source/` or `src/`, else a new `Screenplay/` folder). The standalone form is `screenplay mcp <model-folder>`. A
+alone inside a project, where the CLI reuses existing model/workspace roots.
+A code-only `Source/` or `src/` is not a model root; without model/workspace state,
+use repository-root `Screenplay/`. Requires Cratis CLI 3.93.1 (`cratis --version`)
+and Screenplay 4.236.1 (`screenplay --version`) for their respective discovery
+paths; older versions can select code-only folders. See [root selection](../../cratis-screenplay-event-modeling/references/file-layout.md#locate-the-model).
+The standalone form is `screenplay mcp <model-folder>`. A
 server started with no root at all binds one on first use from `open-workspace`'s
 `path`, the client's roots, or the working directory; that dynamic form depends on the client supplying roots (see the [MCP loop](mcp-loop.md#dynamic-roots-and-the-workaround)),
 so prefer a fixed root. Without a project the server works in `Documents/Screenplay`. Model files never go under `.cratis/`. AI distribution provides the
 profile-selected declaration and guidance; the CLI owns executable hosting and
 client registration. Installation must preserve user-owned MCP servers and
 report unsupported adapters or drift.
+
+From Screenplay 4.236.1, a fixed root at a code-only `Source/` or `src/` can admit
+an explicitly requested direct sibling model folder via `open-workspace path`. The
+configured code root must have no model or workspace state. The sibling must be
+missing, empty, or already model/workspace-bearing; an unrelated nonempty folder,
+a file or a symlink is refused. Existing model/workspace roots stay protected;
+this is not permission to switch to arbitrary roots. Nested targets are refused;
+an empty fixed root named `data` cannot rebind merely because it is empty.
+`semantic-diff` path sources use the same admission checks. Inspect the returned
+root and reuse its workspace/revisions. Path selection alone creates no directory.
+For example, a Java project `/project` with code in `/project/src` but no model or
+Screenplay state selects `/project/Screenplay`, not `/project/src`.
+Source: [sibling admission](https://github.com/Cratis/Screenplay/blob/v4.236.1/Source/DotNET/Screenplay.Mcp/McpWorkspaces.ModelFolder.cs).
 
 ## Tool groups
 
@@ -50,14 +67,17 @@ the [MCP loop](mcp-loop.md).
 
 | Group | Tools | Intent |
 | --- | --- | --- |
-| Understanding | `describe-application`, `search-declarations`, `find-declaration`, `declaration-details` | Navigate logical hierarchy and inspect bounded details |
-| References and examples | `find-references`, `dependencies`, `dependency-graph`, `find-fixtures`, `find-assertion-gaps`, `find-specification-obligations`, `find-modeling-smells`, `trace-lineage`, `semantic-diff` | Inspect declared relationships and authored examples, not executed coverage |
-| Source and validation | `diagnostics`, `ui-profiles`, `read-document`, `merged-document`, `syntax-schema` | Read exact source or typed structure and diagnose problems |
+| Understanding | `describe-application`, `search-declarations`, `find-declaration`, `declaration-details`, `list-storylines` (one optional argument) | Navigate logical hierarchy, inspect bounded details and list storylines |
+| References and examples | `list-storylines`, `find-references`, `dependencies`, `dependency-graph`, `find-fixtures`, `find-assertion-gaps`, `find-specification-obligations`, `find-modeling-smells`, `trace-lineage`, `semantic-diff` | Inspect declared relationships and authored examples, not executed coverage |
+| Source and validation | `diagnostics`, `ui-profiles` (also the design system, themes and resolved values per mode), `read-document`, `merged-document`, `syntax-schema` | Read exact source or typed structure and diagnose problems |
 | Workspace inspection | `open-workspace`, `read-workspace`, `read-ast`, `workspace-state`, `export-workspace`, `repair-capabilities` | Obtain current identities, handles, readiness, code attachment requirements, source-map locations, durable-state status and the repair catalog |
 | Visual (MCP-Apps hosts only) | `visualize-model` | Draw the board for the model or a `proposalId`; its `sketch` argument previews a what-if of whole documents. Reads only |
 | Planning | `propose-source`, `propose-ast`, `propose-rename`, `propose-move`, `propose-repair`, `propose-property`, `propose-number-enum-members`, `propose-extract-inline-event`, `propose-inline-event`, `propose`, `recommend-layout`, `expand-layout` | Produce validated, reviewable candidates without writing them |
 | Review | `read-proposal`, `discard-proposal` | Inspect exact changes, dropped comments and proposed attachments, or abandon a connection-local proposal |
 | Reference execution | `run-specifications` | Run the workspace or a retained proposal candidate read-only; not attached code or target tests |
+
+`propose-ast` node kinds for the design (Screenplay with design systems): `DesignSystemSyntax`, `DesignTokenCategorySyntax`, `DesignTokenSyntax`, `DesignComponentSyntax`, `DesignVariantSyntax`, `DesignStateSyntax`, `DesignAssignmentSyntax`, `DesignWordsSyntax`, `DesignContrastRuleSyntax`, `ThemeModeValuesSyntax`; `ThemeSyntax` gains `implements`, `palette`, `values` and `modeValues`. The tool count is unchanged: `ui-profiles` carries the read.
+| Version migration | `migrate` | Read-only: report what `screenplay migrate --from <major> [--to <major>]` rewrites and, for a named `document`, its migrated source to write through a proposal (`cratis-screenplay-modeling-lifecycle`) |
 | Effects | `apply`, `recover-workspace` | Apply an accepted plan or explicitly recover an interrupted write |
 
 `propose-move` moves a slice to another feature, a feature to another module or feature, or a single command, event, read model, projection, query, reaction or capture to another slice, keeping identities: copy the `target` and `newParent` `{kind, parts}` addresses from the identity inventory (`newParent` is the destination slice for a declaration) and pass `expectedRevision` and `expectedCatalogRevision`. It repairs qualified references and `depends on`, and refuses identity loss, collisions, descendant destinations, name capture (a reference that would resolve to a different declaration), inherited authorization or screen-interaction changes and glob imports; review `moveReport` (`identityMigrations`, `referenceRepairs`, `fragmentsMoved`, and `specificationsCarried` for a declaration). It does not rename events, change pins or move files. Use it for legacy re-slicing instead of retyping declarations. Its report document fields are plain strings, not nested identity objects.
@@ -66,6 +86,7 @@ A declaration move follows these rules:
 
 - A specification that covers only the moved declaration moves with it. A specification covers a declaration when it is a matching specification of one of its `find-specification-obligations` obligations, or when its `when` step names it; a `given` or `then` reference alone is not coverage.
 - The move is refused when a specification also covers a declaration that stays, when an obligation the source slice met would no longer be met or the move would introduce an unmet obligation, on a name collision, for an inline declaration (such as an inline `produces event`), a declaration written in more than one fragment, a standalone specification, screen, constraint or module, and when an unqualified reference would resolve differently. Qualify that reference first.
+- The C# workspace API refuses the same cases as `propose-move`; a refusal in either surface reports the standard `ProposalRejected` failure kind with the usual rejection fields. Carried specifications are computed automatically; a supplied list must match them (Requires Screenplay 4.241.0, `screenplay --version`).
 - Screen `execute`, `refresh` and `navigate to` targets that name the declaration are repaired, not moved.
 - Slice-level events named by `produces` do not travel with a command, and a projection's `from` may name an event declared in another slice; move such an event with its own `propose-move` only when it should change slices. A command's inline events go with it.
 - Event names and pins stay untouched, and assigned identities follow the declaration.
@@ -328,7 +349,11 @@ with `view: "diagnostics"`, then `view: "repairs"` at the current revision.
 | `PLAY0688` | Replace a refuted generated-concept rule with the strategy-derived `matches`; review every concept use affected by the changed rule. |
 | `PLAY0683/0684` | Raise NanoID size/bytes count using the concept subject; PLAY0683 also offers uniqueness using the command-property subject. Individual review, canonical formatting, no pinned evidence; see [concept generation](#concept-generation). |
 | `PLAY0664` | Remove an override identical to the command's complete source/stream/id route. |
-| `PLAY0516` | Move a producing sibling declaration/import before its consumer, or pin an already placed file before a retained glob. Preserve catalogs, comments, placement and executable readiness; introduce no timeline findings. Own-sub-feature edges, cycles, unranked members and mixed/different-parent boundaries have no repair. Rediscover after each move; pinned evidence is unsupported. |
+| `PLAY0516` | Move a producing sibling declaration/import before its consumer, pin an already placed file before a retained glob, or, when those cannot safely fix the edge, replace a same-parent wildcard-import span with explicit ordered imports. The last repair changes future inclusion: new files need explicit imports. Preserve catalogs, comments, placement and executable readiness; introduce no timeline findings. Own-sub-feature edges, cycles, unranked members and mixed/different-parent boundaries have no repair. Rediscover after each move; pinned evidence is unsupported. |
+
+Requires Screenplay 4.219.0 (`screenplay --version`) for wildcard-import expansion;
+older tools do not offer that repair. Read [timeline repair](repairs.md#timeline-import-order)
+for the future-import decision and refusal boundaries.
 
 These discoveries verify acceptance before listing a repair. Only compact
 acceptance/conflict verdicts are cached on the immutable snapshot, not diagnostics,
@@ -372,7 +397,7 @@ leave the event standalone; never work around it with text edits.
 
 Requires Screenplay 4.223.0 (`screenplay --version`) for `trace-lineage`.
 
-`trace-lineage` takes a read-model property `address` and returns a paged tree
+Requires Screenplay 6.6.0 or later (`screenplay --version`) for `direction` and for command, event and screen-field addresses. `trace-lineage` takes a property `address` (a command, event or read-model property: the owner's address and the member; or a screen field: the screen's or form's address and the bound property) and a `direction` (`upstream`, `downstream` or `both`, the default). Downstream a command property goes to the event properties its productions set, to the read-model properties its projections set (and the command properties a reaction's `invokes` sets), then to the queries and screens that show it; a form input field has only downstream hops and a shown field only upstream ones; a command with a `handler` stops at `opaque`. Hops carry `id`, `parent`, `depth`, `direction`, `role`, `status`, `kind`, `address`, `location` (and, for projections, `mode` and `block`). It returns a paged tree
 (`limit`, `offset`) from the property through projection or reducer mappings, joins and
 child mappings to the event property, then to the producing command property or capture
 source. A broken hop is reported where the chain breaks, several sources appear as
@@ -380,6 +405,16 @@ branches and code the model cannot see into is marked opaque. It is read-only an
 advisory.
 
 Requires Screenplay 4.153.0 or later (`screenplay --version`) for `propose-rename` to consult release-baseline mutability; before it, `propose-rename` pins the previous effective name without a baseline.
+
+`read-workspace` with `view: "executable-model"` and `screens: true` admits screens (ESM v42; Screenplay 6.8.0 or later); a reference the model does not hold is refused with `ScreensRefused`.
+
+`read-workspace` also pages `view: "api-description"` (OpenAPI 3.1) and `view: "ui-contract"` (`screenplay-ui/1`) like `executable-model`; `api-description` is unavailable (`available: false`) without an executable model (Screenplay 6.5.0 or later).
+
+`semantic-diff` results carry `slices`, the per-slice change summary (`slices`, `modelWide`, `affectedSlices`; Screenplay 6.2.0 or later); the tool count is unchanged.
+
+`syntax-schema` exposes graph query collects as `GraphQuerySyntax.collects` (`GraphCollectSyntax` with `property`, `from`, `hop`, `returns`; Screenplay 6.29.0 or later, `screenplay --version`); `propose-ast` adds, replaces and removes them through the ordinary typed operations, and the member is omitted when a query collects nothing.
+
+`screenplay rename` is the scriptable, identity-preserving alternative to `propose-rename` plus `apply` (Screenplay 6.1.0 or later; see [export, compare and rename](../../cratis-screenplay-toolchain/references/model-export-diff-rename.md)).
 
 `propose-rename` consults release-baseline mutability: without a
 baseline it conservatively pins the previous effective name; an unadmitted event
@@ -463,7 +498,7 @@ cannot rename a part through `propose-rename`. Operations and
 exact numeric mode remain unadmitted. Check installed schemas, especially when
 the CLI bundle predates the standalone tool.
 
-Systems/operations remain authoring-only (PLAY0268). Sources/streams and their
+Operations remain authoring-only (PLAY0268), as do systems when no system declares an ability; any ability admits every system at ESM v50. Sources/streams and their
 routes are admitted v8, not syntax-only; see toolchain `references/sources-and-streams.md`.
 `generated` properties and `returns` responses are admitted as ESM v7 and bind. The server reads and edits them: `declaration-details` exposes `isGenerated`
 and a command `response` view, `route` and `streams` views; `read-workspace` offers
@@ -703,6 +738,31 @@ structure, identities and direct indexed dependants, not equivalence, execution
 or transitive/runtime impact. Use `read-proposal` with `view: "semantic-diff"`
 for a retained proposal against its disk baseline without applying it; changed
 baseline bytes or pending recovery refuse that view too.
+
+### Enum numeric identity
+
+Requires Screenplay 4.214.0 (`screenplay --version`); older comparison tools do not
+report these enum-specific changes. Inspect `enum-*` items in `members`, especially
+`stored: true`: the baseline enum is reachable from an event property (including
+nested composite types), not proof that events were persisted. `beforeNumber`,
+`afterNumber`, `beforeNumbering`, `afterNumbering` and `afterMember` expose the
+numeric change; implicit numbers are zero-based declaration positions.
+
+`enum-number-changed`, `enum-member-removed` and `enum-number-reused` are
+contract-breaking. `enum-member-renamed` retains an explicit number on both sides
+and is not breaking for default numeric storage, but renames generated C#/TypeScript
+members and schema metadata; a name-based converter can still break. Explicit
+removal/reuse is indistinguishable from that rename, so review intent. Positional
+renames report number reuse. Appending members, reordering stable explicit numbers,
+or pinning existing positions adds no enum records; structural hashes still change.
+Before reordering a stored positional enum, use `propose-number-enum-members` to pin
+its current values. Never migrate stored numbers automatically.
+
+Duplicate names/numbers or inconsistent member/number counts report
+`EnumerationNotComparable`; absence of enum items is not a clean comparison when
+coverage is incomplete. Neither comparison view proves behavioral compatibility
+or waives the separate release-baseline equality check.
+Source: [model comparison](https://github.com/Cratis/Screenplay/blob/v4.214.0/Documentation/screenplay/model-comparison.md).
 
 Authority: `Source/DotNET/Screenplay.Mcp/{McpRevisionDiff,McpWorkspaces.Comparison,McpToolSchemas,McpToolCatalog}.cs`
 and `Documentation/screenplay/mcp/reference.md`.

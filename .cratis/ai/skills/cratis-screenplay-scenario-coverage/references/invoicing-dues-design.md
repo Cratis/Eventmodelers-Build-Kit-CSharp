@@ -59,6 +59,8 @@ module Invoicing
           amount Decimal = amount
       constraint IssueOnce
         unique event InvoiceIssued
+      screen IssueInvoice
+        action IssueInvoice for screen
 
     slice StateView OpenInvoices
       description "Todo list: membership means 'still to collect'. The rules below read it (it lags: an unguarded read is not protection)."
@@ -139,6 +141,9 @@ module Invoicing
       constraint SettleOrVoid
         unique event InvoiceSettled
         unique event InvoiceVoided
+      screen SettleOrVoidInvoice
+        action SettleInvoice for screen
+        action VoidInvoice for screen
 
       specification SettlingAnOpenInvoice
         given caller
@@ -187,6 +192,8 @@ module Invoicing
             message "Only a received, not yet reversed payment can be reversed"   // NOT enforced: the view lags (PLAY0268 at binding)
         produces event PaymentReversed
           amount Decimal = amount
+      screen ReversePayment
+        action ReversePayment for screen
 
       specification ReversingAReceivedPayment
         given caller
@@ -202,9 +209,6 @@ module Invoicing
           invoiceId = "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
           amount    = 130
         then PaymentReversed
-          for "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
-          amount = 130
-        then RefundRequested
           for "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
           amount = 130
 

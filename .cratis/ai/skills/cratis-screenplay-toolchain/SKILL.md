@@ -1,6 +1,6 @@
 ---
 name: cratis-screenplay-toolchain
-description: "How to run and check Cratis Screenplay `.play` models: locating the model, choosing the standalone `screenplay` tool or the `cratis` CLI, the exact command behind each verdict V1 to V5 and what a pass looks like, the executable and renderable subsets, reading PLAY, STAGE and CLI-RENDER diagnostics, traps, and a compiled cheat-sheet. Use when choosing a compiler, running or reading a verdict, fixing a diagnostic, or deciding whether syntax binds or renders. Not for: what to model or the phase workflow (use `cratis-screenplay-modeling-lifecycle`), the MCP editing loop (use `cratis-screenplay-model-authoring`), rendering workflow (use `cratis-screenplay-render-and-gap-fill`)."
+description: Use when selecting a Screenplay compiler, running verdict checks or interpreting PLAY, STAGE and CLI diagnostics. Not for modeling phase decisions, AST editing proposals or the end-to-end rendering workflow.
 license: MIT
 ---
 <!-- cratis-ai-managed: skills/cratis-screenplay-toolchain/SKILL.md -->
@@ -16,6 +16,8 @@ This skill owns tool selection, verdicts and admission. Modeling method lives in
 
 Decide opt-in per `general.md` "Model first"; where `cratis-screenplay-modeling-lifecycle` is installed, run its `scripts/model-first-status.mjs` to locate the model root. A folder of `.play`
 files is one application: always check the folder, never one file of it.
+MCP/CLI discovery reuses model/workspace roots, not code-only `Source/` or `src/`;
+otherwise use repository-root `Screenplay/` ([version gates and root boundaries](../cratis-screenplay-event-modeling/references/file-layout.md#locate-the-model)).
 
 ## Tool versions and the contract
 
@@ -69,12 +71,13 @@ superseded statement needs context; exceptions do not change the contract.
 | Scope/checks | `--scope <address>`, `--check <names>`; a scoped pass is not whole-application success | `validate --executable` (bundled binder, no write), `--check <names>`, `--scope`; `render --scope`/`--check`; `cratis screenplay conform`, `cratis screenplay conform-namespace` |
 | Declared gate | `screenplay <root> --print-gate`, `--format json`, `--no-gate-file` | `validate <root> --print-gate`, `--no-gate-file`; the same `screenplay.json` |
 | Reference execution | `screenplay test <root>` or MCP `run-specifications` | Discover bundled MCP capability; target tests are not V4 |
+| Version migration | `screenplay migrate <root> --from <major> [--to <major>] [--dry-run] [--report <file>]` or MCP `migrate` (read-only); exit 2 means review | Use the standalone tool; see `cratis-screenplay-modeling-lifecycle` |
 | MCP | `screenplay mcp <root>`; discover schemas | `cratis screenplay mcp [root]`; registered by `cratis ai install` |
 | Render boundary | Binder admission is not Stage admission | The CLI renders only ESM versions it knows; a newer bound model gets `CLI-RENDER-004` |
 
 Read `references/verdicts.md` for exact commands, exit codes, the MCP roots caveat and the model notes gate.
 
-Requires Cratis CLI 3.57.0 or later (`cratis --version`) to render models that use equality filters or concept generation strategies (ESM v14 and v15); an older CLI answers `CLI-RENDER-004`. Requires Cratis CLI 3.74.0 for ESM v21–v26 and 3.75.0 for v27 (v28 and later: `CLI-RENDER-004`); above the CLI's ceiling, a bundled compiler that binds the construct answers `CLI-RENDER-004`, and one that predates it reports the binder's PLAY0268 (Uuid equality before Screenplay 4.205.0). Either way keep the rule and gap-fill.
+Requires Cratis CLI 3.57.0 or later (`cratis --version`) to render models that use equality filters or concept generation strategies (ESM v14 and v15); an older CLI answers `CLI-RENDER-004`. Requires Cratis CLI 3.74.0 for ESM v21–v26 and 3.75.0 for v27; see [language admission](references/language-admission.md#compiler-and-target-minimums) for the v28–v30 CLI minimums. Above the CLI's ceiling, a bundled compiler that binds the construct answers `CLI-RENDER-004`, and one that predates it reports the binder's PLAY0268 (Uuid equality before Screenplay 4.205.0). Either way keep the rule and gap-fill.
 
 MCP calls below use the `screenplay` server declared in `.cratis/ai/mcp-servers.json`, for example `screenplay` → `read-workspace`.
 
@@ -86,7 +89,7 @@ Independent results, not a ladder. Read `references/verdicts.md` for the command
 | --- | --- | --- |
 | V1 | authorable (compiles, warnings as errors) | the folder command above |
 | V2 | executable diagnostics read | MCP `open-workspace`, then `read-workspace view=executable-diagnostics` |
-| V3 | binding-ready (binds, no blocking executable diagnostics) | `executableReady` true and no error-severity diagnostic in V2; informational PLAY0269/0270 are reported separately |
+| V3 | binding-ready (binds, no blocking executable diagnostics) | `executableReady` true and no error-severity diagnostic in V2; informational PLAY0269/0270 are reported separately; screens are deferred by default and admitted on request as ESM v42 (`export --screens`) |
 | V4 | reference specifications run | `screenplay test` or MCP `run-specifications`; unsupported/unbound is not a pass; rendered Debug tests are V5.tests, never V4 |
 | V5 | rendered and target-verified | `cratis render`, then Debug build and tests; report admission, publication, build and tests separately |
 
@@ -97,7 +100,13 @@ for MCP initialization, source identity and reporting. Without MCP, report
 version, source identity and any blocking codes; MCP `modelRevision` is semantic,
 not the source identity.
 
+A model whose systems name an `extension` also needs `screenplay.lock` and restored contracts: every compile is strict about them (`PLAY1107` not locked, `PLAY1108` not restored, `PLAY1109` contract differs, `PLAY1110` other range, `PLAY1111` malformed lock). Restore with `cratis extension restore` or `screenplay restore [<folder>] [--locked] [--update] [--source <directory>] [--vendor]`; the language server and MCP restore on opening a model root and report warnings until then. See [extension packages](../cratis-screenplay-extension-packages/SKILL.md).
+
 Read [observation comparison](references/observation-comparison.md) when asking whether a running namespace holds what the model declares, or when reading a `conform-namespace` verdict. It differs from model comparison (model versus model) and `conform` (model versus code).
+
+PLAY0516 ordering is presentation-only, not execution. For a wildcard-import
+repair, read [timeline diagnostics](references/diagnostics.md): replacing globs
+with ordered imports means future files need explicit imports.
 
 ## Subsets (write from the one your mode needs)
 
@@ -109,9 +118,9 @@ Read [observation comparison](references/observation-comparison.md) when asking 
   filters, opaque `scoped to` and a `by` block on a list query remain PLAY0268; a `performer` query is an opaque read left out of the executable model (PLAY0270; [version gate](references/executable-subset.md#code-attachments-what-binds-what-never-does)). Read
   read-surface [equality filters](../cratis-screenplay-read-surface/references/equality-filters.md).
   Pending handlers beside unconditional productions bind as described commands (v23),
-  but reached bodies are Unsupported; attached file/inline handlers refuse PLAY0800
-  and require constrained implementation attachments (code gap-fill, not future ESM
-  admission).
+  but reached bodies are Unsupported; attached file/inline handlers bind the same way
+  beside unconditional `produces` or a `may produce` block (v35) with a resolved body and
+  otherwise refuse PLAY0800.
   Requires Screenplay 4.210.0 (`screenplay --version`); older binders use PLAY0268 for this refusal. Read `arguments.subject`, not the message, for the command.
   Eligible protected reads opt into v25; legacy reads and `concurrency` retain PLAY0271.
   Concept compliance binds as v13 (precise refusals: command-surface `references/compliance.md`);
@@ -132,6 +141,8 @@ Read [observation comparison](references/observation-comparison.md) when asking 
   report PLAY0268); one explicit `key` keeps its earlier version. Read
   `references/production-routes-and-filters.md`, [language admission](references/language-admission.md)
   and read-surface `references/named-keys.md`.
+- **Minor versions:** read [unknown-preserving reader](references/unknown-preserving-reader.md) and
+  [read-model property order](references/read-model-property-order.md).
 - **Enum numbers (v12):** read command-surface `references/enum-numbers.md` for
   pins, stored numbers and Stage output; `references/diagnostics.md` owns PLAY0667–0671.
 - **Concept strategies (v15):** read
@@ -144,6 +155,11 @@ Read [observation comparison](references/observation-comparison.md) when asking 
   `references/diagnostics.md` for proof/support failures. Binding is not rendering.
   Tool/renderer authors: read [references/generation-checks.md](references/generation-checks.md)
   when discovering strategy options, checking one concept or value, or consuming rule proofs.
+- **v32:** a `source events` capture with a typed scalar key carries the key's type onto
+  the appended event's identity.
+  Requires Screenplay 4.241.0 (`screenplay --version`);
+  older compilers keep the key as Text. Read
+  [language admission](references/language-admission.md) for the Stage boundary.
 - **v28:** `==`/`!=` between Uuid values in `require` and `produces when` select v28
   (Requires Screenplay 4.205.0; `screenplay --version`; older binders refuse PLAY0268).
   Read [language admission](references/language-admission.md) and command-surface
@@ -161,6 +177,8 @@ Read [observation comparison](references/observation-comparison.md) when asking 
   not legal compliance, retention or runtime subject realization. See
   command-surface `references/context.md` and `references/compliance.md`.
 
+`audience`, `availability`, `available` and `provide` diagnostics are PLAY1119-PLAY1141; executing a `provide` reports PLAY0268. Specifications and the reference evaluator treat every gate as available; opaque sources are unsupported, never allowed. See `cratis-screenplay-availability`.
+
 ## Edit strategy
 
 Read [the MCP authoring loop](../cratis-screenplay-model-authoring/references/mcp-loop.md)
@@ -173,7 +191,7 @@ unknown apply outcome requires recovery, not retry.
 
 All 44 traps, with fixes: `references/traps.md`. Read `references/traps.md` when diagnosing an unexpected compile, binding, rendering or MCP result.
 
-Read [references/diagnostics.md](references/diagnostics.md) when a PLAY, STAGE or CLI-RENDER diagnostic needs its meaning and fix. When the Screenplay documentation and the compiler disagree, follow the compiler for what is accepted, keep the intended semantics in the model, and record the gap.
+Read [references/diagnostics.md](references/diagnostics.md) when a PLAY, STAGE or CLI-RENDER diagnostic needs its meaning and fix. Sink lines (`PLAY0931`–`PLAY0939`) are realization metadata (PLAY0270): a sink change leaves the ESM revision unchanged. When the Screenplay documentation and the compiler disagree, follow the compiler for what is accepted, keep the intended semantics in the model, and record the gap.
 
 1. Clean V1 is not executable: only MCP (V2) or `render` binds.
 2. Prefer inline `produces event` for a command-owned event; plain command productions need explicit `for <identifier>`.
@@ -195,7 +213,7 @@ Read [references/diagnostics.md](references/diagnostics.md) when a PLAY, STAGE o
 11. Declare an event once, in its producing slice.
 12. Quoted `import "glob"` is your own files; unquoted `import Ctx.Event` is a foreign
     contract and does not bind.
-13. Pending described handlers bind but do not execute their bodies; attached handlers and `numbers exact` do not bind. Descriptions render as XML doc comments, not behavior.
+13. Pending described handlers bind but do not execute their bodies; `numbers exact` does not bind; attached handlers bind only beside `produces`/`may produce` with a resolved body. Descriptions render as XML doc comments, not behavior.
 
 ## Gate
 
@@ -218,6 +236,10 @@ Read [model notes gate](references/verdicts.md#model-notes-gate) when checking
 unresolved questions: the standalone tool has `--open-questions fail`; `cratis screenplay validate`
 does through `--open-questions report|fail`. It is separate from compilation and `--warnaserror`.
 Requires Cratis CLI 3.60.0 or later (`cratis --version`) for that option; older CLIs lack it.
+
+Read [language admission](references/language-admission.md#esm-json-schemas) for the published ESM JSON Schemas (shape, not admission).
+
+Read [export, compare and rename](references/model-export-diff-rename.md) for `screenplay export`, `diff` and `rename` and persisted identities.
 
 Read [fast path](references/fast-path.md) for the ordered requirements-to-running-app checklist (validate, `render --check`, render, build, run, check in a browser, run the specs).
 

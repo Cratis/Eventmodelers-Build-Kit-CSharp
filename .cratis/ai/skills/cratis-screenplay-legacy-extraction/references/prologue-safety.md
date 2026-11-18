@@ -8,6 +8,7 @@
 - 3. LLM use in `interpret` (preflight by the main session; a subagent runs interpret only
 - 4. Cleanup DDL to propose (run by the DBA after the Extractor is stopped)
 - 5. Capture verification before interpreting
+- 6. Rows
 
 Sources: Prologue (the version the CLI bundles; Extractor, Configuration,
 Interpretation) and the cratis CLI (`Source/Cli/Commands/Prologue/*`,
@@ -152,6 +153,20 @@ Record in the evidence table: who ran which statements, when, and the verificati
 summary.
 
 ## 5. Capture verification before interpreting
+
+Requires Prologue 2.0.5 for the emission/image behavior below; check pinned package/image versions and `cratis --version` against its bundle, or upgrade before relying on it.
+
+Upgrade older Extractor installations for the PKCS denial-of-service dependency
+fixes. Extractor, Interpreter and Receiver images support linux/amd64 and
+linux/arm64; Apple Silicon does not need a forced amd64 platform.
+
+Heuristics-only interpretation retains each command's own correlated events
+when routes merge, declares shared events once, treats insert-plus-update in one
+transaction as creation, omits text-only `not empty` rules for required numbers
+and declares/key-identifies referenced read models. Do not retain manual
+workarounds for old emitter defects. These repairs do not prove intent or compile
+the output for you: still run executable validation on the emitted model, not
+only parsing, and record remaining diagnostics.
 - Capture files exist for every enabled source.
 - Commands per route match the scenario script; status-code mix matches expected rejections.
 - Fraction of DB transactions correlated to a command (low: concurrency or jobs).
@@ -159,3 +174,11 @@ summary.
 - Write interpret output to its own folder (`legacy/dynamic/`) and validate that folder;
   interpret output is never compiled by
   Prologue and a refined file can be invalid.
+
+## 6. Rows
+
+Capture facts are written in the shared schema of
+[evidence-format.md](../../cratis-screenplay-event-modeling/references/evidence-format.md) as
+rows with a `sources` entry `{kind: prologue, locator: <capture file and record>, strength:
+observed}`, ids prefixed `PR-`, and status codes `unknown` because Prologue ignores them. Approvals stay in
+[safety.md](../../cratis-screenplay-modeling-lifecycle/references/safety.md) and sections 1 to 5.

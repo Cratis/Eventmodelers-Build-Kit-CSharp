@@ -56,6 +56,8 @@ module Invoicing
           amount Decimal = amount
       constraint IssueOnce
         unique event InvoiceIssued
+      screen IssueInvoice
+        action IssueInvoice for screen
 
       specification IssuingAnInvoice
         given caller
@@ -102,6 +104,9 @@ module Invoicing
       constraint SettleOrVoid
         unique event InvoiceSettled
         unique event InvoiceVoided
+      screen SettleOrVoidInvoice
+        action SettleInvoice for screen
+        action VoidInvoice for screen
 
       specification SettlingAnInvoice
         given caller
@@ -165,6 +170,8 @@ module Invoicing
       command RequestPayment
         invoiceId InvoiceId identifier
         produces event PaymentRequested
+      screen RequestPayment
+        action RequestPayment for screen
 
       specification RequestingPayment
         given caller
@@ -228,9 +235,6 @@ module Invoicing
           for "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
           outcome = "declined"
           reason  = "Card declined"
-        then PaymentDeclined
-          for "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
-          reason = "Card declined"
 
     slice Automation RecordPaymentOutcome
       reaction ReceivedTranslator
@@ -248,6 +252,14 @@ module Invoicing
       event PaymentReceived
       event PaymentDeclined
         reason String
+      specification RecordingADeclinedPayment
+        when append PaymentGatewayResultReceived
+          for "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
+          outcome = "declined"
+          reason  = "Card declined"
+        then PaymentDeclined
+          for "9c1f0a52-6a4e-4b1c-9f55-0d2c7b8e1a01"
+          reason = "Card declined"
 
     slice StateView OpenInvoices
       description "Todo list: membership means 'still to collect'; there is no status flag."
@@ -374,6 +386,8 @@ module Invoicing
           amount > 0 message "A top-up needs an amount above zero"
         produces event CreditToppedUp
           amount Decimal = amount
+      screen TopUpCredit
+        action TopUpCredit for screen
 
       specification ToppingUpCredit
         given caller

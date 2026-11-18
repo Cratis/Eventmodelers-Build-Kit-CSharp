@@ -1,6 +1,6 @@
 ---
 name: cratis-screenplay-render-and-gap-fill
-description: "Deliver an accepted Screenplay `.play` model as code: probe whether `cratis render` admits the whole model, publish, then report admission, publication, Debug build and Debug tests as separate results mapped to the generated specification classes; triage model fix versus capability gap; bounded `Customizations/` adapters; drift by manifest revision; and hand non-renderable scope to `slice-implementer` with the model as the contract. Use when an accepted model must become running code, when asking whether a model renders, or after a model change. Not for: changing the model (use `cratis-screenplay-slice-design`), Stage internals (use `cratis-stage-rendering-and-sandbox`), or checking hand-written code against its slice (use `cratis-application-slice-conformance`)."
+description: Use when probing whether an accepted Screenplay model renders, delivering admitted scope or triaging a renderer gap. Not for changing the model, Stage internals or auditing hand-written slice conformance.
 license: MIT
 ---
 <!-- cratis-ai-managed: skills/cratis-screenplay-render-and-gap-fill/SKILL.md -->
@@ -36,16 +36,25 @@ Tool versions are covered in `cratis-screenplay-toolchain` `SKILL.md`; read it b
 ## Language modes that block target delivery
 
 Read [language admission](../cratis-screenplay-toolchain/references/language-admission.md)
-for v22–v25: Stage rendering refuses atomic batches, described bodies (even Stub mode)
-but renders admitted protected reads in a supporting bundle. Semantic Host/executor
+for version selection ([unknown-preserving reads](../cratis-screenplay-toolchain/references/unknown-preserving-reader.md)
+are not render admission; read-model [property order](../cratis-screenplay-toolchain/references/read-model-property-order.md)
+is opt-in 37.1 metadata, not a constructor-order promise), and [current Stage boundaries](../cratis-stage-rendering-and-sandbox/references/current-boundaries.md)
+for realization. Bounded atomic batches, source-event Translate captures/publication and resolved
+C# validation bodies now render. Described handlers still refuse even in Stub
+mode; query-performer gaps are a separate contract, not completed behavior. Protected reads still need an admitted shape. Semantic Host/executor
 support is not generated-app protection.
 Preserve contracts; reference success is not target realization.
 
-File/inline command handlers permanently require constrained attachments: gap-fill
-in code, not by waiting for ESM admission. Requires Screenplay 4.210.0
-(`screenplay --version`) for PLAY0800 and required typed `arguments.subject`;
-older binders use PLAY0268. Read [renderability gate](references/renderability-gate.md)
-when classifying a handler or other binding refusal; never parse message text.
+A file/inline command handler binds beside unconditional `produces` or `may produce` with a resolved
+body (v23: Screenplay 4.250.0; `may produce`: ESM v35); else it refuses PLAY0800 with a
+required typed `arguments.subject`. 4.210.0-4.249.x refuse every attached handler
+with PLAY0800; older binders use PLAY0268. Read [renderability gate](references/renderability-gate.md)
+when classifying a handler or binding refusal; never parse message text.
+
+Inline bodies (`csharp`, `typescript`, `react`, `html`, `sql`, `java`) are opaque and reach the target
+unchanged; each target decides which it realizes. The Cratis target refuses `java` bodies: gap-fill
+that scope in code and record the refusal.
+Requires Screenplay 4.244.0 (`screenplay --version`) for the `java` refusal.
 
 ## Interview phase
 Ask only for missing inputs: accepted model/root, stable `--name`, destination,
@@ -69,15 +78,18 @@ Supported UUID/String generation, v15 freshness, responses, fixtures and
 types (`STAGE-ESM-028`) and result combinations (`-038`) still require case A or C:
 preserve the model and its specifications. See Stage's `references/admission.md`.
 Supported event-triggered Automation slices also render as managed Chronicle reactors;
-refused reactions, captures and Translate slices remain gap-fill. A `given clock` fixture
+bounded source-event captures and outbound Translate also render; refused reaction/Translate shapes remain gap-fill. A `given clock` fixture
 in the semantic executor is not support for rendering clock triggers.
 Requires Stage 4.141.0 to render v26 Date/DateTime command comparisons; older renderers
 refuse `STAGE-ESM-046`. Read [rendered date comparisons](../cratis-stage-rendering-and-sandbox/references/date-comparisons.md)
 when delivering dates for remaining refusals and input-binding differences.
 
 Source/stream routes bind and reference-execute as v8; target admission is separate.
-Requires Cratis CLI 3.75.0 for v27 admission; older bundles stop earlier, v28 is
-`CLI-RENDER-004`. Read toolchain `references/renderable-subset.md` and
+Requires Cratis CLI 3.75.0 for v27 admission; older bundles stop earlier.
+The reviewed CLI admits semantic versions through v30; its bundled Stage then
+applies matched-pair and construct gates. V32 needs a direct caller of the reviewed
+Stage baseline; see [CLI bundle details](../cratis-screenplay-toolchain/references/language-admission.md#stage-admission-and-execution).
+Read toolchain `references/renderable-subset.md` and
 `references/sources-and-streams.md` when delivering routes, actor gates or filters.
 Preserve refused public/foreign events, production overrides and opaque gates as A/C.
 
@@ -132,13 +144,21 @@ model still compiles and binds) and its V5 states the scope.
    with no business decisions, rebuild, retest. Never edit a managed file; never add behaviour the
    model does not state. Detail: `references/delivery-protocol.md` section 4.
 7. **Report authored-UI parity.** Require explicit plan/runtime evidence for each authored screen,
-   form, layout, template, toolbar, component, outlet, route, package/icon use, theme and persona view,
+   form, layout, template, slot, toolbar, hook, component, outlet, route, package/icon use, theme and persona view,
    or a blocking diagnostic or "not rendered" with the responsible tool version; silent fallback to
    default composition is a failure (Stage 4.24 rendered the default composition only).
+   The design is the same: Stage reads the resolved theme (the profile's theme, else the design system's `default theme`, in the mode
+   its `color scheme` selects) once Cratis/Stage adopts it; until then Stage keeps reading the profile's `appearance` `accent`, `corners` and
+   `font`, so a model that moved them into a theme renders with the default look. Report that as a UI omission naming the Stage version,
+   not as a model defect, and do not put the values back in `appearance` to make it render.
 8. **Drift:** `cratis render ... --check` (exit 6 pending); also compare the manifest's `semanticRevision`
    with a fresh render under the same inputs. For hand-written scope, `cratis screenplay conform` gives
    structural code-vs-model evidence (`references/drift-and-fallback-record.md`). For changes since verification,
    follow that reference's "Hand-written code changed since it was last verified" procedure.
+   A sink change does not move `semanticRevision`: sinks are realization metadata outside the ESM,
+   so a renderer or drift check must hash `SemanticCompilation.Sinks`, `ReadModelSinks` and
+   `GraphSinks` into its render input, or a changed `sink` line never triggers a re-render.
+   Map each sink name to deployment storage; never emit a database name from the model.
 9. **Hand off** the packet: verdict lines, spec mapping, edit requests for the modeler, fallback record
    entries, UI omissions, learning candidates (at most 3).
 
@@ -172,6 +192,9 @@ Adapters and non-renderable scope follow the contract rules of `cratis-applicati
 - The `cratis run` sandbox's legacy EventModel engine (the default engine before CLI 3.73.0) enforces only simple literal validation rules and no
   authorization; it is no evidence for denial behaviour or for any other rule.
 - Never remove `pii`, `secret`, authorization or rules to get a render through; report the gap.
+- Generated .NET apps validate concept `matches` rules at runtime with the `Cratis.Screenplay.Matching` package (`PortableMatcher`),
+  the matcher the compiler admitted; reference it at the same version as the Screenplay compiler.
+  Requires Screenplay 4.241.0 (`screenplay --version`) for that package.
 - Stop and ask only on a genuine contradiction between model, specs, descriptions and declared
   contracts, after reading the slice fully (`cratis-screenplay-modeling-lifecycle` `references/stop-or-assume.md`).
 - Commit set after a delivery the user accepts: the destination's `.cratis-render.json`,
@@ -195,6 +218,7 @@ whole re-render. What to do:
 - Screens reported as `PLAY0269` are information that the backend profile defers them. They are not
   proof of a rendered screen: check the running app (`cratis-screenplay-toolchain` `references/fast-path.md`)
   and list any authored screen that is missing as not rendered.
+- Scope a re-render with `screenplay diff --format json` (`slices`, `modelWide`); other stacks read ESM v42 or `--format ui`: [exports](references/renderability-gate.md#cli-exports-and-diffs).
 
 ## Gate
 
@@ -212,7 +236,7 @@ Before reporting done:
 - A passing test does not claim runtime guarantees (namespace, subject, constraint scope, guarded
   reads, migrations, replay) or omitted UI were delivered.
 - Re-render: drift line present. `Customizations/` changes name the seam and the model element served.
-- Screen delivery: every authored screen/template/form/toolbar/component/outlet/route/package-icon use is either present in generated/runtime evidence or listed as not rendered/unsupported with the responsible tool version.
+- Screen delivery: every authored screen/template/slot/form/toolbar/hook/component/outlet/route/package-icon use is either present in generated/runtime evidence or listed as not rendered/unsupported with the responsible tool version.
 
 ## Route near misses
 

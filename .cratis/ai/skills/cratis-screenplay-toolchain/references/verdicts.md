@@ -228,7 +228,7 @@ results, plus runtime when it was exercised:
 2. **Publication**: what was written, unchanged or refused (`.cratis-render.json`,
    `.cratis-render/journal.json`; `recovered: true` means stop and reconcile).
 3. **Build**: Debug build of the destination (`dotnet build`).
-4. **Tests**: Debug tests of the destination (`dotnet test`). Generated specifications are
+4. **Tests**: After the Debug build, run `dotnet test <destination>/<Project>.csproj -c Debug --no-build` for Stage-rendered apps (VSTest). Use a built spec executable only in repositories whose spec projects really are executables (see [specs.csharp](../../../rules/specs.csharp.md)); never start the rendered app's web-server executable to run specs. Generated specifications are
    compiled in Debug only; map results by generated spec class (`when_<snake>` in namespace
    `<Slice ns>.when_<snake>`, `when_<snake>_is_queried`, `when_<snake>_is_projected`) back to
    the `.play` specification, not by test counts.
@@ -251,8 +251,7 @@ What Stage admits: `renderable-subset.md`.
 | Rendering | `cratis render` | Separate admission, publication, target build and target tests (V5) |
 
 Source validation does not bind or run attached code. Reference execution is in-memory and
-does not run opaque attachments or external services. CLI-derived specification IDs need not
-match persisted MCP identities after renames; use MCP for identity-stable selection. A folder
+does not run opaque attachments or external services. In a folder with `.screenplay/identities.json`, `test`, `export`, `diff` and `rename` use the persisted identities the MCP server uses; without it, or when the folder drifted, `test` uses address-derived ids (see [export, compare and rename](model-export-diff-rename.md#persisted-identities)). A folder
 compiles as one application: a standalone file includes its imports, not unimported siblings,
 so keep the application root as the input for scoped checks and never treat a clean fragment
 or scoped result as whole-application success.

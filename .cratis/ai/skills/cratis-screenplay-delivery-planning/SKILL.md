@@ -1,6 +1,6 @@
 ---
 name: cratis-screenplay-delivery-planning
-description: "Plan and estimate the delivery of an accepted Screenplay model by slices: count slices by type (StateChange, StateView, Automation, Translate), derive the slice dependency table from the model, split work in parallel along event contracts, track slice groups as GitHub issues with a closed status vocabulary, and turn the team's own completed-slice history into ranged estimates, capacity math and retrospective metrics. Use when asked how long a modeled scope will take, how to split it across people or agents, what to build first, or how to track and re-plan delivery. Not for: deciding what to model (use `cratis-screenplay-event-modeling`), rendering or gap-filling a slice (use `cratis-screenplay-render-and-gap-fill`), or reviewing the model (use `cratis-screenplay-model-review`)."
+description: Use when estimating an accepted Screenplay scope, ordering slice dependencies or dividing and tracking delivery across people or agents. Not for deciding model behavior, reviewing the model or rendering individual slices.
 license: MIT
 ---
 <!-- cratis-ai-managed: skills/cratis-screenplay-delivery-planning/SKILL.md -->
@@ -114,6 +114,6 @@ provides a claim tool such as `issue_work`, its claim step is that guard.
 - `references/provenance.md` - sources and what was not adopted.
 
 ## Related skills
-`cratis-screenplay-slice-design` (slice dependencies), `cratis-screenplay-model-authoring`
+after a model change, `slices` from `screenplay diff --format json` (with `modelWide` and `affectedSlices`) scopes the re-planning; `screenplay export --scope <slice>` hands one slice's executable model to a builder and `screenplay diff` lists what changed ([CLI reference](../cratis-screenplay-toolchain/references/model-export-diff-rename.md)); `cratis-screenplay-slice-design` (slice dependencies), `cratis-screenplay-model-authoring`
 (MCP navigation), `cratis-screenplay-render-and-gap-fill` (what renders, gap-fill handoff),
 `cratis-screenplay-modeling-lifecycle` (phases and gates).

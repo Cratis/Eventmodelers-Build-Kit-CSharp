@@ -50,6 +50,27 @@ The reference fold admits only root-property set/clear from literals or event
 properties; other mappings block planning. Publication is unrouted and reactions
 can observe the new public fact. A route filter therefore cannot select publication.
 
+Events an outbound projection publishes count as producers: a routed fact, an
+`every`/`all` scope and compile-time source-type inference all see them, and a
+published instance keeps the event source and context of the fact that produced it.
+An `every` scope folds every producible event type, so inference needs those facts to
+share one source type. A projection that combines `from` and `every` over different
+producible event types is refused as ambiguous (`InvalidSemanticContract`, no `PLAY`
+code), because the published event would have no single source type:
+
+```screenplay excerpt
+// Refused: PackOrder produces OrderPacked keyed by an OrderId, while another
+// producer's event is keyed by a different type; `every` folds both.
+projection OrderShippedPublisher => OrderShipped
+  every
+    status = "packed"
+  from OrderPacked
+    carrier = carrier
+```
+
+Fold one source type, or map each event in its own `from` and drop `every`.
+Requires Screenplay 5.2.0 (`screenplay --version`).
+
 This complete source uses the released publication specification form:
 
 ```screenplay
@@ -64,6 +85,8 @@ module Integration
         carrier String
         produces event OrderPacked
           carrier String = carrier
+      screen PackOrder
+        action PackOrder for screen
     slice Translate PublishOrderShipped
       direction outbound
       public event OrderShipped
@@ -114,7 +137,7 @@ module Integration
         source events
           from ShipmentDispatched
           from ShipmentDelivered
-        key orderId
+        key orderId is event source
         append OrderDispatched
           when added
             carrier = $.carrier
@@ -164,6 +187,13 @@ must be required on every `from` event (PLAY0700); `$eventSourceId` and other co
 keys are refused. An empty or whitespace-only text key fails execution, even in a
 given before the action; non-text/non-numeric keys are Unsupported.
 
+The example declares `is event source` because the producer sources every event by
+`orderId`.
+Requires Screenplay 4.242.0 and ESM v33. A fixture `for` must then equal the key;
+without `for`, it takes the key. Unmarked captures stay unchanged. Other
+sources or non-single-property keys report PLAY0809, with no automatic repair. Read
+[event-source keys](../../cratis-screenplay-captures-and-reactions/references/capture-map-and-example.md#keying-by-the-event-source).
+
 Givens fold in authored order without appending. Each event overlays its top-level
 properties onto state for that typed key: absent properties retain earlier values;
 objects/lists replace whole values. First sight is `added` only, unchanged overlays
@@ -171,6 +201,9 @@ append nothing, and field/`and`/`or`/transition guards require a modification. A
 append without `when` holds on any change, not on every delivery. Maps apply to
 before and after states; `$.field` reads the mapped merged state. An expression
 guard evaluates the after state only on a change. Root `when removed` never holds.
+
+A command's specification never states the public event an outbound Translate slice publishes
+(`PLAY0285`, decision 0115); the outbound slice's own specification does.
 
 Captures run after reactions to the same input settle; each capture append settles
 its own cascade before the next. Mixed capture/reaction assertions may need

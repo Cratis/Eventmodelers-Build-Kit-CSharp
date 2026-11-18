@@ -250,6 +250,8 @@ module Berths
         berth BerthName
         produces event BerthBooked
           berth BerthName = berth
+      screen BookBerth
+        action BookBerth for screen
       specification BookingABerth
         given caller
           authenticated
@@ -281,7 +283,7 @@ module Berths
       screen OpenBooking
         title "Open booking"
         data OpenBooking via query OpenBookingById
-        action CancelBooking
+        action CancelBooking for item
       specification CancelledBookingLeavesTheList
         given caller
           authenticated

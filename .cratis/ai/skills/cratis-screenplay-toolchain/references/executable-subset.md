@@ -14,6 +14,7 @@
 - Chronological command date comparisons (ESM v26)
 - Flat composite read-model keys (ESM v27)
 - Uuid equality in command conditions (ESM v28)
+- Clocks, calendars and time zones (ESM v37)
 - Code attachments (what binds, what never does)
 - Refused (code, reason): fix, or record as a mode gap
 - Not refused, but do not rely on it
@@ -22,7 +23,8 @@
 What the binder admits, and what it refuses with which code, depends on the compiler: the
 standalone tool binds the newest ESM versions, while the compiler bundled in the CLI (and the
 renderer that uses it) admits through an older version. Operations, the `numbers exact`
-**source mode** (PLAY0268) remain unadmitted. Routes bind as
+**source mode** (PLAY0268) and systems in a model where none declares an ability remain
+unadmitted; any ability admits every system at v50. Routes bind as
 ESM v8, public/direction constructs as v9, identity/overrides/filters as v10, qualifying
 non-route Double literals (exact lowering of Double-mode literals) as v11, non-positional enum
 numbers as v12, concept compliance as v13, caller-supplied collection equality filters as v14,
@@ -46,7 +48,7 @@ Complete examples that bind live in `executable-example.md`, `pdl-example.md` (p
 For atomic batches (v22), described handlers (v23), ordinal text rules (v24) and
 protected reads (v25), chronological command dates (v26), composite keys (v27) and Uuid equality (v28), read
 [language admission](language-admission.md). A later
-version alone does not enable either application opt-in. The language is frozen at ESM v1–v28 ([the freeze decision](https://github.com/Cratis/Screenplay/blob/main/decisions/0092-the-language-is-frozen-at-esm-v28.md)): no new versions, constructs, keywords or grammar, except a construct for a real model that is blocked with no model-side alternative, accepted in its own record. Model with what v1–v28 offers; when Stage, `cratis render` or Studio does not support a construct yet, treat the typed refusal as a platform gap to report, since consumers are catching up to v28, not a reason to wait for new language.
+version alone does not enable either application opt-in. New constructs can be admitted, each byte-changing one with its own ESM version, and count as delivered once Stage admits it or refuses it with a typed refusal. Model with what the installed compiler admits; when Stage, `cratis render` or Studio does not support a construct yet, treat the typed refusal as a platform gap to report.
 
 ## Caller and compliance boundary
 
@@ -92,7 +94,7 @@ Requires Screenplay 4.141.0 or later (`screenplay --version`) to bind concept co
   equivalent inferred ESM bytes. Flat composite read-model keys bind as v27
   (see below). Collections and observable delivery bind.
   Caller-supplied equality filters on collections also bind as ESM v14; context
-  sources, single-result filters, scope and a list-query `by` block remain blocked; a `performer` query is an opaque read left out of the executable model.
+  sources, single-result filters, scope and a list-query `by` block remain blocked; a `performer` query is an opaque read left out of the executable model (Stage still renders its verified C# body: [performer bodies](../../cratis-screenplay-read-surface/SKILL.md#performer-bodies-are-rendered)).
 - One projection per read model: `from`, `every`, `all` (one block per level), `join`,
   `children`, `nested`, `remove with`, `remove via join` (binds; blocks the execution plan at the projection level, see below), `clear with`, counters, `add`,
   `subtract`, `set`, `clear`, variants, and the identifier mapped from the projection's key (`xId = $eventSourceId` only for an event-source key).
@@ -102,6 +104,12 @@ Requires Screenplay 4.141.0 or later (`screenplay --version`) to bind concept co
   specifications ending in `then query` or `then readmodel`.
 - `seed`. Personas, screens and descriptions are PLAY0270/PLAY0269 information, not
   blocking.
+- Sinks. `sink <Name> for readmodels|graphs` and a body's `sink <Name>` are PLAY0270 realization
+  metadata outside the ESM: the ESM bytes and revision do not change with them. A compilation
+  exposes them as `SemanticCompilation.Sinks` (declared sinks, defaults never listed),
+  `ReadModelSinks` (by read model identity) and `GraphSinks` (by graph name); in the syntax tree as
+  `ApplicationSyntax.sinks` (`SinkSyntax` with `name`, `stores`), `ReadModelSyntax.sink` and
+  `GraphSyntax.sink`, omitted from JSON when empty. Older tools reject syntax JSON that carries them.
 
 ## Text `not empty` reference correction
 
@@ -161,10 +169,10 @@ Requires Screenplay 4.105.0 or later (`screenplay --version`) for list queries (
   due **after** the given clock and **at or before** the when clock, once each, in time
   order. `when clock` needs `given clock`. Limits: 10,000 occurrences per advance, 1,000
   facts per scenario. A scenario with given equal to when fires nothing.
-- Command specifications that list reaction cascades.
+- Command specifications that list another slice's reaction events (`PLAY0285`; decision 0115).
 - In a `then` list after `when append`, only what followed the appended event.
 
-Requires Screenplay 4.61 or later (`screenplay --version`) for ESM v6 constructs, and Cratis CLI 3.28.2 or later for the bundled compiler; older compilers refuse them with PLAY0268 and report a false PLAY0285 on cascades.
+Requires Screenplay 4.61 or later (`screenplay --version`) for ESM v6 constructs, and Cratis CLI 3.28.2 or later for the bundled compiler; older compilers refuse them with PLAY0268. `then invokes` needs Screenplay 4.246.0 (ESM v34).
 
 Requires Screenplay 4.125.0 or later (`screenplay --version`) for reaction `runs as system`.
 
@@ -289,7 +297,7 @@ joins, `children`, `remove via join`, `every`, `all`, `nested`, `clear with`, `v
 and reducers on the composite-keyed read model, a list query with a `by` block, a
 non-optional single-instance return, and command reads (PLAY0271, or PLAY0781
 reason `by-parts` under `command reads protected`) or trigger reads that produce directly.
-Requires Stage 4.137.0 for v27 admission (older Stage refuses it with STAGE-ESM-016): the semantic Host runs composite-keyed read models end to end, and the specification executor refuses specifications over them as unsupported. The Cratis renderer refuses a read model with several key parts or a projection keyed by parts with STAGE-ESM-048 and a single-instance query by parts with STAGE-ESM-047 (Chronicle#4265); composite-keyed read models get no conventional `Get<ReadModel>ById` query. This is independent of standalone binding and reference execution. Read read-surface
+Requires Stage 4.137.0 for v27 admission (older Stage refuses it with STAGE-ESM-016): the semantic Host runs composite-keyed read models end to end, and the specification executor refuses specifications over them as unsupported. The Cratis renderer refuses a read model with several key parts or a projection keyed by parts with STAGE-ESM-048 (always for a DateTime part or a decimal part, a `Decimal` primitive or a concept over `Decimal`, which a replay can split into `1.0` and `1.00` instances; the decimal refusal lifts with Stage#847 once Chronicle#5427 lands) and a single-instance query by parts with STAGE-ESM-047 (Chronicle#4265); composite-keyed read models get no conventional `Get<ReadModel>ById` query. This is independent of standalone binding and reference execution. Read read-surface
 [named keys](../../cratis-screenplay-read-surface/references/named-keys.md) for the
 complete example.
 
@@ -308,37 +316,60 @@ binding and reference execution. Read command-surface
 [Uuid equality](../../cratis-screenplay-command-surface/references/uuid-equality.md) for the
 complete example.
 
+## Clocks, calendars and time zones (ESM v37)
+
+Requires Screenplay 5.5.0 (`screenplay --version`); older binders refuse them with PLAY0268.
+Application-root `time zone` / `time zone configurable default` and `context` time-zone
+members, command `calendar` / `calendar from $context.<member>`, specification
+`given time zone`, and the condition operands `today - 7 days`, `now + 2 hours`,
+`date of occurred` and `date of now` bind and execute in the reference evaluator, selecting
+ESM v37. They are admitted in command `validate`/`require`, `produces when` and `validate`
+comparison rules; a clock operand in a concept, reaction or screen is PLAY0268. A bare `today`
+or `now` is a clock operand unless a command property of that name shadows it. Consumers must
+admit v37 and evaluate the clock in the stated zone, or refuse the model. Stage admits 37.0 but
+refuses clock members per scope (`STAGE-ESM-016`: the commands and specifications that use
+them; every specification when an application zone or context member exists; the renderer
+refuses the model), so execution here is not rendering or clock-trigger realization. Detail: command-surface
+`references/date-comparisons.md`; admission: [language admission](language-admission.md).
+
 ## Code attachments (what binds, what never does)
 
 Pending `handler implementation` beside unconditional `produces` binds as a described
 command (v23). Its payload-only body returns Unsupported ImplementationBody when reached;
 denial/validation specs still run. Read [language admission](language-admission.md) for
 v22–v28 and [described handlers](../../cratis-screenplay-command-surface/references/described-handlers.md)
-for the result contract. Attached handlers remain unbound.
+for the result contract. An attached handler binds only as described below.
 
-Inline fences (`csharp`, `typescript`, `react`, `html`, `sql`) and `file <path>` attach
+Inline fences (`csharp`, `typescript`, `react`, `html`, `sql`, `java`) and `file <path>` attach
 code to an owner. Two kinds block binding (V3 blocked, no specification runs):
-the attached command `handler` (PLAY0800) and the `file` constraint (PLAY0268, see below).
+an attached command `handler` without unconditional `produces` or `may produce`, or without a resolved body
+(PLAY0800) and the `file` constraint (PLAY0268, see below).
 A query `performer` does not block: it is an opaque read, reported as information
 `PLAY0270` and left out of the executable model; a specification that reads it is left
-out, and every other specification still runs with `screenplay test`.
+out, and every other specification still runs with `screenplay test`. That is the compiler fact only; Stage renders the body separately ([performer bodies](../../cratis-screenplay-read-surface/SKILL.md#performer-bodies-are-rendered)).
 Requires Screenplay 4.220.1 (`screenplay --version`); older versions refuse a performer
 query with PLAY0268 and leave the whole model unbound. Everything else binds as an **opaque requirement** that needs a target to
 execute: reducer transitions, rule predicates, command and concept code validation, policy
 predicates and reaction effects. Reaction effects bind only when the trigger has no
 `reads`; a trigger with `reads` plus a `file` or inline effect fails binding. Reaction
-bodies still leave their owner non-executable.
+bodies still leave their owner non-executable, unless the host supplies a body execution provider for a
+standalone single-event reaction body (Requires Screenplay 4.258.0; see
+[reaction bodies](../../cratis-screenplay-captures-and-reactions/references/reaction-forms.md#reaction-bodies-run-through-a-host-provider)).
 
 - A `file` constraint **never binds**: PLAY0268 "file implementation is not admitted by
   the executable model". Chronicle file constraints
   can only declare uniqueness: declare it with `unique ...`, and put other rules in command
   validation or a `require` condition.
 
-- A file/fenced command `handler` refuses PLAY0800, wrapped or direct: a permanent
-  requirement for a constrained implementation attachment, not future ESM admission.
-  Gap-fill the slice in code; hosts read the required typed `arguments.subject` for
-  the command rather than matching message text.
-  Requires Screenplay 4.210.0 (`screenplay --version`); older binders use PLAY0268.
+- A file/fenced command `handler`, wrapped or direct, binds as the v23 result contract
+  beside unconditional `produces` with a resolved, nonempty, language-tagged body:
+  `produces` fixes the events, the body owns their
+  values, and a reached body is Unsupported (`ImplementationBody`). With neither `produces` nor
+  a `may produce` block, with `produces ... when`, or with an unresolved body (even beside
+  `may produce`) it refuses PLAY0800. A resolved, nonempty, language-tagged body beside a
+  `may produce` block binds at ESM v35, result contract v2; hosts read the
+  required typed `arguments.subject` for the command rather than matching message text.
+  Requires Screenplay 4.250.0 or later (`screenplay --version`) for an attached handler beside `produces` to bind; 4.210.0 to 4.249.x refuse every attached handler with PLAY0800 and older binders use PLAY0268.
   A pending intent instead selects v23 with unconditional productions (PLAY0695 information).
   Missing productions use PLAY0696, conditional ones PLAY0697, duplicate handlers PLAY0698.
   Hints are not executable code, locks or confirmation.
@@ -352,10 +383,24 @@ bodies still leave their owner non-executable.
 - Stage admits only pure reducer bodies (Roslyn allowlist, STAGE-ESM-019 and 022);
   code validation is refused (STAGE-ESM-005). Opaque pure policies render.
 - The reference runner returns Unsupported for the opaque bodies that do bind (rule and
-  policy predicates, code validation, reducer transitions); a specification that needs one
-  never passes. Attached handlers and file constraints (and reaction effects on a trigger with
-  `reads`) are different: they leave the whole model unbound, so no specification runs at
-  all.
+  policy predicates, code validation, reducer transitions) when no host body execution provider
+  is supplied (the standalone tool supplies none); a specification that needs one never passes.
+  A host can opt in: [host body execution](../../cratis-screenplay-specifications/references/host-body-execution.md). Attached handlers without `produces`/`may produce` or a resolved body, and file constraints (and reaction effects on a trigger with
+  `reads`) are different: under strict binding (`ISemanticModelCompiler.Compile`, which the standalone
+  tool uses) they leave the whole model unbound, so no specification runs at all.
+- **Admissible compilation is narrower than that.** `CompileAdmissible` (the opt-in host API
+  `IAdmissibleSemanticModelCompiler`; Requires Screenplay 4.254.0 or later) binds the supported
+  subset of a source-valid application and lists what it removed in `Exclusions`: refused
+  specifications, slices, imports and policies, each with a typed `Cause` (`Root` or `Dependent`)
+  and `DependsOn`. Security dependencies fail closed: a refused policy or protected read removes
+  everything it protects. It does not establish runtime identity safety. A top-level `trigger` that fails to bind is excluded
+  (kind `Trigger`, cause `Root`, carrying the original binder diagnostic; it has no code of its own).
+  The reactions and specifications it sets off stop binding and are excluded on later passes as
+  `Dependent` exclusions whose `DependsOn` names the trigger. Independent slices stay in the
+  model. A trigger declared more than once, or named `Startup` or `Shutdown`, is not pruned.
+  Requires Screenplay 5.2.0 (`screenplay --version`); earlier compilers drop the whole model for
+  one failing trigger. The strict path, and a host that calls only `Compile`, still refuse the
+  whole model, so name which compiler a result came from.
 
 ## Refused (code, reason): fix, or record as a mode gap
 
@@ -367,13 +412,13 @@ bodies still leave their owner non-executable.
 | `query` with a `by` block over a list, or `by ... from` context-derived arguments | PLAY0268 | a `by` block binds only on an optional single-instance query (v27). An optional scalar snapshot lookup, an unfiltered list (`RM[]`) and a list narrowed by one caller-supplied `by` key bind, in their `observable` form too |
 | Context `from`, single-result filters, `scoped to` | PLAY0268 | Typed query context, filtering of single results and opaque scope remain unadmitted; a `performer` query is not refused (PLAY0270 information, left out of the executable model); each refusal names its reason. Caller-supplied collection equality filters bind as v14. `observable` goes in the return position (`=> observable RM[]`); as a body line it is PLAY0048 |
 | `contains` or `starts with` in conditions only | PLAY0268 | conditions admit scalar equality (Uuid from v28) and numeric ordering, plus same-primitive command date comparisons from v26; property/concept text rules bind as v24 |
-| Date comparisons with mixed primitives, `$context` (including occurred), `today`, protected read paths, optional condition operands, concept rules or reaction `where` | PLAY0268 | v26 admits only command conditions and command/property literal validation rules |
+| Date comparisons with mixed primitives, `$context` (including occurred), protected read paths, optional condition operands, concept rules or reaction `where`; clock operands outside command conditions and `validate` comparison rules, clock against clock, a `today` offset in hours or minutes | PLAY0268 | v26 admits only command conditions and command/property literal validation rules; v37 adds the clock operands there |
 | Rule on a nested path (`lines.qty all > 0`) | PLAY0268 | put the rule on the nested value's concept |
 | Read paths without protected opt-in, or in `produces when` | PLAY0268 | v25 admits single-level paths only in `require` and produced-event mappings; a Uuid read path compared with `==`/`!=` follows the same positions |
 | Uuid comparison with `<`, `>`, different concepts, optional operands, a validation rule or a concept rule | PLAY0268 | v28 admits `==`/`!=` in command conditions only, between the same concept or a bare Uuid and a concept |
 | Legacy `reads <View> ...` on a command | PLAY0271 (error) | `command reads protected` opts eligible views into v25; see command-surface protected reads |
 | `concurrency` block on a command | PLAY0271 (error) | "concurrency metadata keeps its legacy meaning and cannot bind to ESM v1" |
-| File/inline `handler` (see above) | PLAY0800 | permanent attachment requirement: gap-fill in code; pending described handlers instead bind v23, with body execution/rendering separate |
+| File/inline `handler` without unconditional `produces` or `may produce`, or without a resolved body (see above) | PLAY0800 | declare unconditional `produces` or a `may produce` block (v35) beside a resolved body, or gap-fill in code; pending and attached handlers beside `produces` bind v23, with body execution/rendering separate |
 | `$context.tenant`, roles, claims, causation | PLAY0268 | no portable scalar counterpart |
 | Arithmetic or raw expression in a `produces` mapping | PLAY0268 | |
 | Template `` `${x}` `` or `$causedBy` in a projection | PLAY0268 | |
@@ -385,7 +430,7 @@ bodies still leave their owner non-executable.
 | `$eventContext.occurred.Week` | PLAY0273 | derived value |
 | Projection `parent p` where `p` is not on the child event | PLAY0273 | "Event property not found" |
 | `generated` or `returns` on an older compiler | PLAY0268 | admitted from ESM v7, see above |
-| Operations or systems, `numbers exact` source mode | PLAY0268 | not admitted by any supported ESM version; one such construct leaves the **whole** application without an executable model. Event sources/streams/routes instead bind as ESM v8 on the current compiler (`sources-and-streams.md`) |
+| Operations, systems when no system declares an ability, `numbers exact` source mode | PLAY0268 | not admitted by any supported ESM version (once any system declares an ability, all systems bind at v50); one such construct leaves the **whole** application without an executable model. Event sources/streams/routes instead bind as ESM v8 on the current compiler (`sources-and-streams.md`) |
 | Spec of a gated command or query without `given caller` | PLAY0389 | module and feature gates count |
 | `given` or `then readmodel` missing key parts | PLAY0351 | explicit `key` marks replace inference; composite fixtures need every part (v27) |
 | When-less spec asserting events or errors | PLAY0352 | |

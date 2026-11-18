@@ -9,10 +9,12 @@
 - Exact numeric source mode
 - Clause order inside a command (canonical)
 - Slice contents (typical)
+- Event-source capture keys (ESM v33)
 - `$context.` paths (command `produces`)
 - `$eventContext.` (projections)
 - PDL quick reference (most forms are compiled in `pdl-example.md` or `cheat-sheet-example.md`; `remove via join` and `$eventContext.occurred` are not)
 - Generated values and proofs
+- UI profile theme references
 - Specification forms
 
 Released boundary forms: `public event X`, `event X from "store"`, Translate
@@ -48,7 +50,7 @@ examples belong to `cheat-sheet-example.md` and its siblings.
 
 | File | Mode | V1, warnings as errors | V3 (binds) |
 | --- | --- | --- | --- |
-| `cheat-sheet-example.md` | design: every construct family | 0 diagnostics, both tools (an older bundled compiler reported a false PLAY0285 on the `RecordingAPayment` cascade spec) | not ready by design (its header lists why; fewer blockers on the standalone tool) |
+| `cheat-sheet-example.md` | design: every construct family | 0 diagnostics, both tools | not ready by design (its header lists why; fewer blockers on the standalone tool) |
 | `executable-example.md` | executable, StateChange and StateView | 0 diagnostics, both tools | ready, both tools |
 | `pdl-example.md` | executable projections | 0 diagnostics, both tools | ready, both tools |
 | `automation-translate-example.md` | executable Automation and Translate (ESM v6) | 0 diagnostics, both tools (an older bundled compiler could not bind it) | ready, both tools |
@@ -98,7 +100,7 @@ remain unadmitted. Compile and test each relevant fixture with the chosen tool.
   at most once. Canonical printing may place it first, but the parser does not
   require that position. Source preambles precede declarations.
 - Strings: `"..."`, escapes `\" \\ \n \r \t`; other backslashes kept (regex `"^INV-\d{6}$"` works).
-- Structured values: single-line JSON, quoted keys (`[{"sku": "A-1", "quantity": 2}]`).
+- Structured values: the property name, then an indented `item` block per list row; `<property> none` for an empty list. Screenplay has no JSON (`PLAY0833`).
 - Literal property/concept text rules use `contains`, `not contains`, `starts with`,
   `ends with` with quoted operands (v24, ordinal UTF-16). Portable `matches` refuses
   nonportable constructs with PLAY0699; exact Studio patterns warn PLAY0787.
@@ -139,6 +141,17 @@ description, properties, `reads`, `authorize`, `validate`, `produces`/`handler`,
 - `slice Translate <Behaviour>`: capture and/or translator reaction + both vocabularies' events.
 - Declare each event once, in the slice that produces it; reference it by name elsewhere.
 
+## Event-source capture keys (ESM v33)
+
+For inbound `source events` captures only, a single-property
+`key <property> is event source` promises every incoming event is sourced by that
+key (Screenplay 4.242.0; serializes `keyIsEventSource` beside `sourceEvents`).
+Other sources/key shapes report PLAY0809, with no automatic repair. Explicit typed
+fixture `for` must equal the key; omission takes the key before projections/reactions,
+including givens without an action. Unmarked captures keep earlier semantics.
+An admitting renderer may narrow history reads by event source id; binding is not target evidence.
+Read [event-source keys](../../cratis-screenplay-captures-and-reactions/references/capture-map-and-example.md#keying-by-the-event-source) for the complete example.
+
 ## `$context.` paths (command `produces`)
 `occurred`, `tenant`, `command.<p>`, `arguments.<p>`, `causedBy.subject|name|userName`,
 `causation.type`, `identity.id|name|userName|isAuthenticated|roles|claims.<n>`.
@@ -159,6 +172,22 @@ Use bare `pii`/`secret` on concepts (`personal` aliases `pii`); legacy markers
 are PLAY0565 information and repeated markers are PLAY0653 warning. Event `subject`
 is report-only lineage; processing purposes/checks/reports declare use, not lawful
 processing or runtime retention. See command-surface `references/compliance.md`.
+
+`audiences` and provided names are also `$context.` paths beneath their level. Syntax (6.25.0 and 6.26.0; see command-surface and availability skills):
+
+```text
+audience Plus
+  description "Plus package"
+availability Sold
+  for Plus
+  when $context.vessel.hasReported == true
+provide vessel Vessel optional from query VesselByKey by $context.arguments.vesselId
+available for Plus or (Preview and Early)
+available when $context.region == "Nordics"
+available with Sold
+```
+
+`available` is allowed on a module, feature, slice, command, query and screen; `provide` at application, module, feature and slice. Specifications run with every gate available.
 
 ## `$eventContext.` (projections)
 `eventType{.id,.generation,.tombstone}`, `eventSourceType`, `eventSourceId`, `eventStreamType`,
@@ -213,6 +242,18 @@ generated source destinations need freshness. Read
 for v21 admission, all-Proven unpinned specs and the separate prerequisites for
 warning/info rules, checksum validation and pattern/random rendering.
 `generate rule` renders from Stage 4.136.0 (STAGE-ESM-028 in the Host). Reference binding is not rendering.
+
+## UI profile theme references
+
+Inside `ui profile`, write `theme "Scene Default Light"` for a package theme's
+display name. Requires Screenplay 4.227.0 (`screenplay --version`); older compilers
+reject quoted references. Escapes resolve to the name. Undeclared quoted names
+refer to package themes without `PLAY0231`; quoted names matching declarations
+receive `PLAY0232` compatibility checks. Bare `theme Nordic` is unchanged.
+Empty, blank or unterminated quoted names are `PLAY0229`; duplicates are `PLAY0230`.
+Declaration headers remain identifiers, not quoted names. Package compatibility
+is unchanged; parse acceptance does not prove rendering support. See [profile
+examples](../../cratis-screenplay-ui-composition/references/ui-profile-and-theme.md#ui-profile-and-theme).
 
 ## Specification forms
 Full list with semantics: `Documentation/screenplay/specifications.md`. Compiled in the
